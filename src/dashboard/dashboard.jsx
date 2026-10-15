@@ -196,14 +196,234 @@ function DashIcon({ d, className = 'h-5 w-5' }) {
   );
 }
 
+/* Defined at module level so children (and their form state) are not
+   re-mounted every time the dashboard re-renders. */
+function Panel({ title, subtitle, children, action, className = '' }) {
+  return (
+    <div className={`panel rounded-xl sm:rounded-2xl border border-[#DDD8CC] bg-white/95 backdrop-blur-sm p-4 sm:p-6 md:p-8 shadow-sm ${className}`}>
+      <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+        <div className="min-w-0">
+          <h2 className="serif m-0 text-xl sm:text-2xl text-[#0F2A43] leading-tight">{title}</h2>
+          {subtitle && <p className="mt-1 text-sm text-[#4A5B6C]">{subtitle}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const MAIN_ACCOUNT = { name: 'USD Current', type: 'Checking', num: '•••• 4821', available: 412860.20 };
+const usd = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
+const initialsOf = (name) => name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+const lastFour = (acct) => acct.replace(/\s+/g, '').slice(-4);
+
+const SEED_BENEFICIARIES = [
+  { id: 'b1', kind: 'transfer', name: 'Adaeze Okafor', bank: 'First Bank of Nigeria', account: '3012456789' },
+  { id: 'b2', kind: 'transfer', name: 'Harbour Property Ltd', bank: 'Chase Bank', account: '000123459876' },
+  { id: 'b3', kind: 'wire', name: 'Meridian Trust', bank: 'NatWest', account: 'GB29 NWBK 6016 1331 9268 19', swift: 'NWBKGB2L', country: 'United Kingdom' },
+  { id: 'b4', kind: 'wire', name: 'Zurich Private AG', bank: 'UBS Switzerland', account: 'CH93 0076 2011 6238 5295 7', swift: 'UBSWCHZH80A', country: 'Switzerland' },
+];
+
+const TRANSFER_KINDS = {
+  transfer: { title: 'Realtime bank transfer', subtitle: 'Arrives in minutes on supported instant rails.', fee: 0, eta: 'Within minutes', cta: 'Send now', accountLabel: 'Account number' },
+  wire: { title: 'Wire transfer', subtitle: 'International transfer via SWIFT.', fee: 25, eta: '1–3 business days', cta: 'Send wire', accountLabel: 'IBAN / account number' },
+};
+
+const inputCls = 'w-full rounded-md border border-[#CFC9BA] bg-white px-3 py-2 text-sm text-[#14202E] focus:border-[#B08A3E] focus:outline-none focus:ring-2 focus:ring-[#D8B76A]/35 transition';
+const labelCls = 'mb-1 block text-xs font-semibold text-[#3D4C5B]';
+
+function TransferForm({ kind, beneficiaries, onAddBeneficiary, preselectId }) {
+  const cfg = TRANSFER_KINDS[kind];
+  const list = beneficiaries.filter((b) => b.kind === kind);
+  const [benId, setBenId] = useState(() => (list.some((b) => b.id === preselectId) ? preselectId : ''));
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ name: '', bank: '', account: '', swift: '', country: '' });
+  const [amount, setAmount] = useState('');
+  const [reference, setReference] = useState('');
+  const [err, setErr] = useState('');
+  const [sent, setSent] = useState(null);
+
+  const ben = list.find((b) => b.id === benId);
+  const amt = parseFloat(amount) || 0;
+  const total = amt + (amt > 0 ? cfg.fee : 0);
+
+  const onSelect = (e) => {
+    const v = e.target.value;
+    if (v === '__new') { setAdding(true); setBenId(''); return; }
+    setAdding(false);
+    setBenId(v);
+    setErr('');
+  };
+
+  const saveBeneficiary = () => {
+    const required = kind === 'wire' ? ['name', 'bank', 'account', 'swift'] : ['name', 'bank', 'account'];
+    if (required.some((k) => !draft[k].trim())) { setErr('Fill in the beneficiary’s name, bank, and account details to save them.'); return; }
+    const nb = { id: `b${Date.now()}`, kind, ...Object.fromEntries(Object.entries(draft).map(([k, v]) => [k, v.trim()])) };
+    onAddBeneficiary(nb);
+    setBenId(nb.id);
+    setAdding(false);
+    setDraft({ name: '', bank: '', account: '', swift: '', country: '' });
+    setErr('');
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!ben) { setErr('Choose a beneficiary, or add a new one.'); return; }
+    if (amt <= 0) { setErr('Enter an amount greater than zero.'); return; }
+    if (total > MAIN_ACCOUNT.available) { setErr(`This exceeds your available balance of ${usd(MAIN_ACCOUNT.available)}.`); return; }
+    setErr('');
+    setSent({ name: ben.name, amount: amt, total });
+  };
+
+  const reset = () => { setSent(null); setAmount(''); setReference(''); };
+
+  if (sent) {
+    return (
+      <Panel title={cfg.title} className="anim-in">
+        <div className="mx-auto max-w-md py-6 text-center" role="status">
+          <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E7F6EE] text-2xl text-[#1B7A4B]" aria-hidden="true">✓</span>
+          <p className="serif text-2xl text-[#0F2A43]">{kind === 'wire' ? 'Wire sent' : 'Transfer sent'}</p>
+          <p className="mt-2 text-sm text-[#3D4C5B]">{usd(sent.amount)} to {sent.name}. Expected: {cfg.eta.toLowerCase()}.</p>
+          <p className="mt-1 text-xs text-[#4A5B6C]">Total debited {usd(sent.total)} from {MAIN_ACCOUNT.name} {MAIN_ACCOUNT.num}</p>
+          <button type="button" onClick={reset} className="btn btn-navy mt-6 !px-5 !py-2.5 text-sm">Make another transfer</button>
+        </div>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel title={cfg.title} subtitle={cfg.subtitle} className="anim-in">
+      <form onSubmit={submit} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <div className="space-y-4">
+          {/* From — single account, shown as a fixed line */}
+          <div>
+            <span className={labelCls}>From</span>
+            <div className="flex items-center justify-between gap-3 rounded-md border border-[#E4DFD2] bg-[#FBF9F4] px-3 py-2">
+              <span className="text-sm font-medium text-[#0F2A43]">{MAIN_ACCOUNT.name} <span className="text-[#4A5B6C]">{MAIN_ACCOUNT.num}</span></span>
+              <span className="text-xs text-[#4A5B6C]">Available <span className="font-semibold tabular-nums text-[#0F2A43]">{usd(MAIN_ACCOUNT.available)}</span></span>
+            </div>
+          </div>
+
+          {/* Beneficiary */}
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label htmlFor={`${kind}-ben`} className="text-xs font-semibold text-[#3D4C5B]">Beneficiary</label>
+              {!adding && (
+                <button type="button" onClick={() => { setAdding(true); setBenId(''); setErr(''); }} className="text-xs font-semibold text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">+ Add new beneficiary</button>
+              )}
+            </div>
+            <select id={`${kind}-ben`} className={inputCls} value={adding ? '__new' : benId} onChange={onSelect}>
+              <option value="" disabled>Select a saved beneficiary</option>
+              {list.map((b) => (
+                <option key={b.id} value={b.id}>{b.name} — {b.bank} •••• {lastFour(b.account)}</option>
+              ))}
+              <option value="__new">+ Add new beneficiary…</option>
+            </select>
+
+            {ben && !adding && (
+              <div className="mt-2 flex items-center gap-3 rounded-md border border-[#E4DFD2] bg-white px-3 py-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#1E4B73] to-[#0F2A43] text-[11px] font-semibold text-[#EDD595]">{initialsOf(ben.name)}</span>
+                <div className="min-w-0 text-xs text-[#4A5B6C]">
+                  <p className="truncate text-sm font-medium text-[#0F2A43]">{ben.name}</p>
+                  <p className="truncate">{ben.bank} · {ben.account}{ben.swift ? ` · ${ben.swift}` : ''}</p>
+                </div>
+              </div>
+            )}
+
+            {adding && (
+              <div className="mt-2 rounded-lg border border-[#D8B76A]/60 bg-[#FBF9F4] p-3 sm:p-4">
+                <p className="mb-3 text-sm font-semibold text-[#0F2A43]">New beneficiary</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label htmlFor={`${kind}-nb-name`} className={labelCls}>Full name</label>
+                    <input id={`${kind}-nb-name`} className={inputCls} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoComplete="off" />
+                  </div>
+                  <div>
+                    <label htmlFor={`${kind}-nb-bank`} className={labelCls}>Bank name</label>
+                    <input id={`${kind}-nb-bank`} className={inputCls} value={draft.bank} onChange={(e) => setDraft({ ...draft, bank: e.target.value })} autoComplete="off" />
+                  </div>
+                  <div>
+                    <label htmlFor={`${kind}-nb-acct`} className={labelCls}>{cfg.accountLabel}</label>
+                    <input id={`${kind}-nb-acct`} className={inputCls} value={draft.account} onChange={(e) => setDraft({ ...draft, account: e.target.value })} autoComplete="off" />
+                  </div>
+                  {kind === 'wire' && (
+                    <>
+                      <div>
+                        <label htmlFor={`${kind}-nb-swift`} className={labelCls}>SWIFT / BIC</label>
+                        <input id={`${kind}-nb-swift`} className={`${inputCls} uppercase`} value={draft.swift} onChange={(e) => setDraft({ ...draft, swift: e.target.value })} autoComplete="off" />
+                      </div>
+                      <div>
+                        <label htmlFor={`${kind}-nb-country`} className={labelCls}>Country</label>
+                        <input id={`${kind}-nb-country`} className={inputCls} value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })} autoComplete="off" />
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={saveBeneficiary} className="btn btn-navy !px-4 !py-2 text-xs">Save beneficiary</button>
+                  <button type="button" onClick={() => { setAdding(false); setErr(''); }} className="btn btn-outline !px-4 !py-2 text-xs">Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Amount + reference */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor={`${kind}-amt`} className={labelCls}>Amount (USD)</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#4A5B6C]">$</span>
+                <input id={`${kind}-amt`} type="number" inputMode="decimal" min="0.01" step="0.01" className={`${inputCls} pl-7 tabular-nums`} placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label htmlFor={`${kind}-ref`} className={labelCls}>Reference <span className="font-normal text-[#4A5B6C]">(optional)</span></label>
+              <input id={`${kind}-ref`} className={inputCls} placeholder={kind === 'wire' ? 'e.g. Invoice 2041' : 'e.g. Rent October'} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={35} />
+            </div>
+          </div>
+
+          {err && <p role="alert" className="rounded-md bg-[#FDF2F1] px-3 py-2 text-sm text-[#B3261E]">{err}</p>}
+        </div>
+
+        {/* Summary */}
+        <aside className="balance-card relative h-fit overflow-hidden rounded-xl bg-gradient-to-br from-[#1E4B73] via-[#163A5C] to-[#0A1D30] p-5 text-white">
+          <div className="engrave" />
+          <div className="relative">
+            <p className="serif text-lg text-[#EDD595]">Summary</p>
+            <dl className="mt-3 space-y-2.5 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-[#A8B8C8]">To</dt><dd className="truncate text-right font-medium">{ben ? ben.name : '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#A8B8C8]">Amount</dt><dd className="tabular-nums">{usd(amt)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#A8B8C8]">Fee</dt><dd className="tabular-nums">{cfg.fee ? usd(cfg.fee) : 'Free'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#A8B8C8]">Arrives</dt><dd>{cfg.eta}</dd></div>
+            </dl>
+            <div className="mt-4 flex items-baseline justify-between border-t border-white/15 pt-3">
+              <span className="text-sm text-[#D5DEE8]">Total</span>
+              <span className="serif text-2xl tabular-nums">{usd(total)}</span>
+            </div>
+            <button type="submit" className="btn btn-gold mt-4 w-full !py-2.5 text-sm">{cfg.cta}</button>
+            <p className="mt-3 text-[11px] leading-relaxed text-[#A8B8C8]">
+              {kind === 'wire' ? 'Fees are shown before you confirm. Correspondent banks may deduct charges.' : 'Payments to new beneficiaries may need a one-time approval in the app.'}
+            </p>
+          </div>
+        </aside>
+      </form>
+    </Panel>
+  );
+}
+
 export default function Dashboard({ go: goProp } = {}) {
-  const go = goProp || ((to) => { try { window.location.assign(to); } catch (e) { /* ignore */ } });
+  const go = goProp || ((to) => { try { window.location.assign(to); } catch { /* ignore */ } });
   const [section, setSection] = useState('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [animKey, setAnimKey] = useState(0);
+  const [beneficiaries, setBeneficiaries] = useState(SEED_BENEFICIARIES);
+  const [preselect, setPreselect] = useState(null);
+  const addBeneficiary = (b) => setBeneficiaries((list) => [...list, b]);
+  const sendTo = (b) => { selectSection(b.kind); setPreselect(b.id); };
   const current = dashMenu.find((m) => m.id === section) || dashMenu[0];
   const firstName = 'Alex';
   const hour = new Date().getHours();
@@ -250,9 +470,7 @@ export default function Dashboard({ go: goProp } = {}) {
     ['FX exchange USD→EUR', '-$10,000.00', '1 week ago'],
   ];
   const accounts = [
-    { name: 'USD Current', type: 'Checking', bal: '$285,420.10', num: '•••• 4821' },
-    { name: 'EUR Savings', type: 'Savings', bal: '€98,210.00', num: '•••• 9033' },
-    { name: 'GBP Reserve', type: 'Savings', bal: '£42,150.55', num: '•••• 1176' },
+    { name: MAIN_ACCOUNT.name, type: MAIN_ACCOUNT.type, bal: usd(MAIN_ACCOUNT.available), num: MAIN_ACCOUNT.num },
   ];
   const notifs = [
     ['Transfer completed', 'USD 12,000 to Meridian Trust', '2h ago'],
@@ -261,22 +479,13 @@ export default function Dashboard({ go: goProp } = {}) {
   ];
 
   const selectSection = (id) => {
+    setPreselect(null);
     setSection(id);
     setAnimKey((k) => k + 1);
     setMobileOpen(false);
     setNotifOpen(false);
     setProfileOpen(false);
   };
-
-  const Panel = ({ title, children, action, className = '' }) => (
-    <div className={`panel rounded-xl sm:rounded-2xl border border-[#DDD8CC] bg-white/95 backdrop-blur-sm p-4 sm:p-6 md:p-8 shadow-sm ${className}`}>
-      <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <h2 className="serif text-xl sm:text-2xl text-[#0F2A43] leading-tight">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </div>
-  );
 
   const field = 'w-full rounded-md border border-[#CFC9BA] bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-[#14202E] focus:border-[#B08A3E] focus:outline-none focus:ring-2 focus:ring-[#D8B76A]/35 transition';
 
@@ -285,71 +494,15 @@ export default function Dashboard({ go: goProp } = {}) {
   const content = () => {
     switch (section) {
       case 'transfer':
-        return (
-          <Panel title="Realtime bank transfer" className="anim-in">
-            <form className="mx-auto w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">From account</label>
-                <select className={field} defaultValue="usd">
-                  <option value="usd">USD Current · •••• 4821</option>
-                  <option value="eur">EUR Savings · •••• 9033</option>
-                  <option value="gbp">GBP Reserve · •••• 1176</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Beneficiary account / IBAN</label>
-                <input className={field} placeholder="Account number or IBAN" required />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Amount</label>
-                <input type="number" min="0.01" step="0.01" className={field} placeholder="0.00" required />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Reference (optional)</label>
-                <input className={field} placeholder="Payment reference" />
-              </div>
-              <button type="submit" className="btn btn-navy w-full">Send now</button>
-              <p className="text-xs text-[#4A5B6C]">Realtime transfers settle within minutes where corridors support instant rails.</p>
-            </form>
-          </Panel>
-        );
       case 'wire':
         return (
-          <Panel title="Wire transfer" className="anim-in">
-            <form className="mx-auto w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">From account</label>
-                <select className={field} defaultValue="usd">
-                  <option value="usd">USD Current · •••• 4821</option>
-                  <option value="eur">EUR Savings · •••• 9033</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Beneficiary name</label>
-                <input className={field} required />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Bank name</label>
-                <input className={field} required />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#14202E]">SWIFT / BIC</label>
-                  <input className={field} required />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#14202E]">IBAN / Account</label>
-                  <input className={field} required />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Amount (USD)</label>
-                <input type="number" min="1" step="0.01" className={field} required />
-              </div>
-              <button type="submit" className="btn btn-navy w-full">Submit wire</button>
-              <p className="text-xs text-[#4A5B6C]">International wires typically complete in 1–3 business days. Fees shown before confirmation.</p>
-            </form>
-          </Panel>
+          <TransferForm
+            key={`${section}-${preselect || ''}`}
+            kind={section}
+            beneficiaries={beneficiaries}
+            onAddBeneficiary={addBeneficiary}
+            preselectId={preselect}
+          />
         );
       case 'account':
         return (
@@ -610,23 +763,23 @@ export default function Dashboard({ go: goProp } = {}) {
                   </div>
                 </div>
 
-                {/* Accounts breakdown */}
+                {/* Send again — saved beneficiaries */}
                 <div className="border-t border-white/10 p-5 sm:p-7 lg:border-l lg:border-t-0 lg:bg-black/10">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-[#D5DEE8]">Your accounts</p>
-                    <button type="button" onClick={() => selectSection('account')} className="text-xs font-semibold text-[#EDD595] underline underline-offset-4 hover:text-white transition">View all</button>
+                    <p className="text-sm font-medium text-[#D5DEE8]">Send again</p>
+                    <button type="button" onClick={() => selectSection('transfer')} className="text-xs font-semibold text-[#EDD595] underline underline-offset-4 hover:text-white transition">New transfer</button>
                   </div>
                   <ul className="mt-3 divide-y divide-white/10">
-                    {accounts.map((a) => (
-                      <li key={a.name} className="flex items-center justify-between gap-3 py-3">
+                    {beneficiaries.slice(0, 3).map((b) => (
+                      <li key={b.id} className="flex items-center justify-between gap-3 py-2.5">
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="serif flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#EDD595]/30 bg-white/5 text-sm text-[#EDD595]">{a.bal.charAt(0)}</span>
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#EDD595]/30 bg-white/5 text-xs font-semibold text-[#EDD595]">{initialsOf(b.name)}</span>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">{a.name}</p>
-                            <p className="text-xs text-[#A8B8C8]">{a.type} · {a.num}</p>
+                            <p className="truncate text-sm font-semibold text-white">{b.name}</p>
+                            <p className="truncate text-xs text-[#A8B8C8]">{b.kind === 'wire' ? 'Wire' : 'Realtime'} · {b.bank} •••• {lastFour(b.account)}</p>
                           </div>
                         </div>
-                        <p className="serif shrink-0 text-base tabular-nums text-white">{maskBalance(a.bal)}</p>
+                        <button type="button" onClick={() => sendTo(b)} className="shrink-0 rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#EDD595]/60 hover:bg-white/10">Send</button>
                       </li>
                     ))}
                   </ul>
