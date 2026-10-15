@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Panel, RecentActivity, AccountInfoPage, CardsPage, TrackingPage, InvestingPage, NotificationsPage, LoanPage, SettingsPage } from './pages';
+import { Panel, RecentActivity, AccountInfoPage, CardsPage, TrackingPage, InvestingPage, NotificationsPage, LoanPage, SettingsPage, SupportPage } from './pages';
 import { NOTIFICATIONS } from './data';
 
 const styles = `
@@ -462,7 +462,6 @@ export default function Dashboard({ go: goProp } = {}) {
     setProfileOpen(false);
   };
 
-  const field = 'w-full rounded-md border border-[#CFC9BA] bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-[#14202E] focus:border-[#B08A3E] focus:outline-none focus:ring-2 focus:ring-[#D8B76A]/35 transition';
 
   const maskBalance = (value) => (balanceVisible ? value : '••••••••');
 
@@ -490,37 +489,11 @@ export default function Dashboard({ go: goProp } = {}) {
       case 'notifications':
         return <NotificationsPage items={notifItems} setItems={setNotifItems} />;
       case 'loan':
-        return <LoanPage />;
+        return <LoanPage onContact={() => selectSection('support')} />;
       case 'settings':
         return <SettingsPage onSignOut={() => go('/signin')} />;
       case 'support':
-        return (
-          <Panel title="Support" className="anim-in">
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
-              <div className="card-lift rounded-xl border border-[#DDD8CC] p-5 sm:p-6">
-                <h3 className="serif text-lg sm:text-xl text-[#0F2A43]">Message your advisor</h3>
-                <p className="mt-2 text-sm text-[#3D4C5B]">Secure chat during business hours in your time zone.</p>
-                <button type="button" className="btn btn-navy mt-4 !px-4 !py-2 text-sm">Open chat</button>
-              </div>
-              <div className="card-lift rounded-xl border border-[#DDD8CC] p-5 sm:p-6">
-                <h3 className="serif text-lg sm:text-xl text-[#0F2A43]">Private client line</h3>
-                <p className="mt-2 text-sm text-[#3D4C5B]">+1 800 555 0142</p>
-                <p className="mt-1 text-xs text-[#4A5B6C]">24-hour for Reserve and Sovereign</p>
-              </div>
-            </div>
-            <form className="mt-6 sm:mt-8 w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Subject</label>
-                <input className={field} required />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Message</label>
-                <textarea className={`${field} min-h-[100px] sm:min-h-[120px]`} required />
-              </div>
-              <button type="submit" className="btn btn-navy w-full sm:w-auto">Send message</button>
-            </form>
-          </Panel>
-        );
+        return <SupportPage />;
       default:
         return (
           <div key={animKey}>
