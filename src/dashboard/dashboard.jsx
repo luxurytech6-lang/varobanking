@@ -132,6 +132,38 @@ html, body, #root {
   background: rgba(255,255,255,0.22);
   transform: scale(1.06);
 }
+/* ---------- Alignment ---------- */
+.ap { text-align: left; }
+
+/* ---------- Texture ---------- */
+/* Fine paper grain over every surface */
+.ap::after { content: ''; position: fixed; inset: 0; z-index: 70; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px; opacity: .045; mix-blend-mode: overlay; }
+/* Engine-turned guilloché for deep surfaces (balance card, cards, team banner) */
+.ap .engrave { position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background:
+    repeating-radial-gradient(circle at 100% 0%, rgba(237,213,149,.075) 0 1px, transparent 1px 9px),
+    repeating-radial-gradient(circle at 0% 100%, rgba(237,213,149,.04) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.018) 0 1px, transparent 1px 6px); }
+.ap .navy-bg { background:
+  repeating-radial-gradient(circle at 90% -10%, rgba(216,183,106,.05) 0 1px, transparent 1px 10px),
+  radial-gradient(900px 500px at 85% -10%, #1F4D78 0%, transparent 60%),
+  linear-gradient(160deg, #0F2A43, #0A1D30); }
+/* Gold EMV chip for card swatches */
+.ap .chip { background: linear-gradient(135deg, #F3E1A9, #C9A24B 55%, #9C7A33);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.5); }
+
+/* ---------- Depth ---------- */
+.ap .panel { box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 1px 2px rgba(15,42,67,.04), 0 20px 44px -30px rgba(15,42,67,.3); }
+.ap .panel:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(15,42,67,.05), 0 30px 60px -32px rgba(15,42,67,.4); }
+.ap .balance-card { box-shadow: 0 2px 6px rgba(10,29,48,.18), 0 40px 80px -36px rgba(10,29,48,.65); }
+.ap .balance-card:hover { box-shadow: 0 4px 10px rgba(10,29,48,.2), 0 50px 90px -36px rgba(10,29,48,.72); }
+.ap .qa-btn { box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(15,42,67,.05), 0 12px 24px -20px rgba(15,42,67,.3); }
+.ap .swatch { box-shadow: 0 1px 2px rgba(0,0,0,.25), 0 10px 18px -10px rgba(10,29,48,.6); }
+.ap .dash-aside { box-shadow: 1px 0 0 rgba(255,255,255,.6), 12px 0 32px -28px rgba(15,42,67,.35); }
+.ap .dash-header { box-shadow: 0 1px 0 rgba(255,255,255,.7), 0 10px 30px -26px rgba(15,42,67,.4); }
+
 @media (prefers-reduced-motion: reduce) {
   .ap .anim-in,
   .ap .balance-card::after,
@@ -145,7 +177,7 @@ html, body, #root {
 const dashMenu = [
   { id: 'overview', label: 'Overview', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
   { id: 'transfer', label: 'Realtime bank transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
-  { id: 'wire', label: 'Wire transfer', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { id: 'wire', label: 'Wire transfer', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { id: 'account', label: 'Account info', icon: 'M3 6h18M3 12h18M3 18h18' },
   { id: 'cards', label: 'Cards', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
   { id: 'tracking', label: 'Tracking', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
@@ -174,6 +206,9 @@ export default function Dashboard({ go: goProp } = {}) {
   const [animKey, setAnimKey] = useState(0);
   const current = dashMenu.find((m) => m.id === section) || dashMenu[0];
   const firstName = 'Alex';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 
   useEffect(() => {
     if (mobileOpen) {
@@ -198,7 +233,7 @@ export default function Dashboard({ go: goProp } = {}) {
 
   const quickActions = [
     { id: 'transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
-    { id: 'wire', label: 'Wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id: 'wire', label: 'Wire', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'cards', label: 'Cards', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { id: 'investing', label: 'Invest', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
   ];
@@ -341,16 +376,21 @@ export default function Dashboard({ go: goProp } = {}) {
       case 'cards':
         return (
           <Panel title="Cards" className="anim-in" action={<button type="button" className="btn btn-navy !px-3 !py-2 sm:!px-4 text-sm">Request card</button>}>
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {[
                 { name: 'Aurelia Reserve', last: '4821', exp: '09/28', status: 'Active' },
                 { name: 'Aurelia Virtual', last: '7740', exp: '12/27', status: 'Active' },
                 { name: 'Aurelia Travel', last: '1192', exp: '03/29', status: 'Frozen' },
               ].map((c) => (
-                <div key={c.last} className="card-lift relative overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 text-white" style={{ background: 'linear-gradient(135deg,#1E4B73,#0A1D30)' }}>
-                  <p className="text-sm text-[#D5DEE8]">{c.name}</p>
-                  <p className="serif mt-6 sm:mt-8 text-xl sm:text-2xl tracking-widest">•••• •••• •••• {c.last}</p>
-                  <div className="mt-5 sm:mt-6 flex justify-between text-sm">
+                <div key={c.last} className="card-lift swatch relative aspect-[1.586/1] overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 text-white flex flex-col justify-between" style={{ background: c.status === 'Frozen' ? 'linear-gradient(135deg,#4A5B6C,#1F2A36)' : 'linear-gradient(135deg,#1E4B73,#0A1D30)' }}>
+                  <span className="engrave" />
+                  <div className="relative flex items-start justify-between">
+                    <p className="text-sm text-[#D5DEE8]">{c.name}</p>
+                    <span className="serif text-lg text-[#EDD595]">A</span>
+                  </div>
+                  <span className="chip relative h-7 w-10 rounded-md" aria-hidden="true" />
+                  <p className="serif relative text-xl sm:text-2xl tracking-widest">•••• •••• •••• {c.last}</p>
+                  <div className="relative flex justify-between text-sm">
                     <span>Exp {c.exp}</span>
                     <span className={c.status === 'Active' ? 'text-[#7FE0A8]' : 'text-[#FF9A8F]'}>{c.status}</span>
                   </div>
@@ -501,26 +541,33 @@ export default function Dashboard({ go: goProp } = {}) {
       default:
         return (
           <div key={animKey}>
+            {/* Page header */}
+            <div className="mb-5 sm:mb-6 flex flex-wrap items-end justify-between gap-3 anim-in">
+              <div>
+                <p className="text-sm font-medium text-[#8A6A26]">{today}</p>
+                <h1 className="serif m-0 mt-1 text-2xl sm:text-3xl text-[#0F2A43]">{greeting}, {firstName}</h1>
+              </div>
+              <div className="flex items-center gap-2 rounded-full border border-[#DDD8CC] bg-white/80 px-3 py-1.5 text-xs font-medium text-[#3D4C5B] shadow-sm">
+                <span className="status-dot" aria-hidden="true" />
+                Reserve membership · all accounts active
+              </div>
+            </div>
+
             {/* Balance card */}
             <div className="mb-6 sm:mb-8 anim-in">
-              <div className="balance-card relative overflow-hidden rounded-2xl p-5 sm:p-6 text-white bg-gradient-to-br from-[#1E4B73] via-[#163A5C] to-[#0A1D30] shadow-xl text-left">
+              <div className="balance-card relative overflow-hidden rounded-2xl text-white bg-gradient-to-br from-[#1E4B73] via-[#163A5C] to-[#0A1D30] text-left">
+                <div className="engrave" />
                 <div className="gloss absolute inset-0 rounded-2xl pointer-events-none" />
-                <div className="relative z-[1]">
-                  <p className="text-[#D5DEE8]" style={{ fontSize: '16px' }}>Good Morning, {firstName}</p>
-                  <p className="serif mt-0.5 text-white" style={{ fontSize: '16px' }}>Welcome back</p>
-                  <p className="serif mt-3 text-lg sm:text-xl text-[#EDD595]">Account overview</p>
-
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="status-dot" aria-hidden="true" />
-                      <span className="text-xs font-semibold text-[#7FE0A8]">Active</span>
-                    </div>
-                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#EDD595] backdrop-blur-sm border border-white/10">
+                <div className="relative z-[1] grid lg:grid-cols-[1.25fr_1fr]">
+                <div className="p-5 sm:p-7">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="serif text-lg sm:text-xl text-[#EDD595]">Account overview</p>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-[#EDD595] backdrop-blur-sm border border-[#EDD595]/25">
                       Checking
                     </span>
                   </div>
 
-                  <p className="mt-4 text-sm text-[#D5DEE8] text-left">Available balance</p>
+                  <p className="mt-6 text-sm text-[#D5DEE8] text-left">Available balance</p>
                   <div className="mt-1.5 flex items-center gap-3 text-left">
                     <p className="serif text-3xl sm:text-4xl tracking-tight tabular-nums">
                       {maskBalance('$412,860.20')}
@@ -551,16 +598,39 @@ export default function Dashboard({ go: goProp } = {}) {
                     </span>
                   </p>
 
-                  <div className="relative mt-5 flex items-center justify-between">
+                  <div className="relative mt-6 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
                     <span className="text-xs font-medium text-[#A8B8C8]">Checking · •••• 4821 · USD</span>
                     <button
                       type="button"
                       onClick={() => selectSection('transfer')}
-                      className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm border border-white/10 transition hover:bg-white/25"
+                      className="btn btn-gold !px-4 !py-2 text-xs"
                     >
                       Transfer
                     </button>
                   </div>
+                </div>
+
+                {/* Accounts breakdown */}
+                <div className="border-t border-white/10 p-5 sm:p-7 lg:border-l lg:border-t-0 lg:bg-black/10">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-[#D5DEE8]">Your accounts</p>
+                    <button type="button" onClick={() => selectSection('account')} className="text-xs font-semibold text-[#EDD595] underline underline-offset-4 hover:text-white transition">View all</button>
+                  </div>
+                  <ul className="mt-3 divide-y divide-white/10">
+                    {accounts.map((a) => (
+                      <li key={a.name} className="flex items-center justify-between gap-3 py-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="serif flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#EDD595]/30 bg-white/5 text-sm text-[#EDD595]">{a.bal.charAt(0)}</span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-white">{a.name}</p>
+                            <p className="text-xs text-[#A8B8C8]">{a.type} · {a.num}</p>
+                          </div>
+                        </div>
+                        <p className="serif shrink-0 text-base tabular-nums text-white">{maskBalance(a.bal)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 </div>
               </div>
             </div>
@@ -602,10 +672,12 @@ export default function Dashboard({ go: goProp } = {}) {
                       className="card-lift flex items-center gap-3 sm:gap-4 rounded-xl border border-[#DDD8CC] bg-[#FBF9F4] p-3 sm:p-4"
                     >
                       <div
-                        className="relative flex h-12 w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-lg text-white shadow-md"
+                        className="swatch relative flex h-12 w-[4.75rem] shrink-0 items-end justify-end overflow-hidden rounded-lg p-1.5 text-white"
                         style={{ background: 'linear-gradient(135deg,#1E4B73,#0A1D30)' }}
                       >
-                        <span className="serif text-[10px] tracking-widest opacity-90">•••• {c.last}</span>
+                        <span className="engrave" />
+                        <span className="chip absolute left-2 top-2 h-2.5 w-3.5 rounded-[2px]" aria-hidden="true" />
+                        <span className="relative text-[9px] font-medium tracking-wider text-[#D5DEE8]">•••• {c.last}</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-[#0F2A43] text-sm sm:text-base truncate">{c.name}</p>
@@ -642,11 +714,28 @@ export default function Dashboard({ go: goProp } = {}) {
             </div>
 
             {/* Relationship team */}
-            <div className="mt-6 sm:mt-8 navy-bg gloss relative overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 text-white shadow-lg anim-in anim-in-d3">
-              <div className="relative max-w-xl">
-                <h2 className="serif mb-2 sm:mb-3 text-xl sm:text-2xl">Your relationship team</h2>
-                <p className="mb-5 sm:mb-6 text-sm leading-relaxed text-[#D5DEE8]">A named advisor is assigned to your account. Book a call or send a secure message anytime.</p>
-                <button type="button" onClick={() => selectSection('support')} className="btn btn-gold relative !px-4 !py-2 sm:!px-5 sm:!py-2.5 text-sm">Schedule a call</button>
+            <div className="balance-card mt-6 sm:mt-8 navy-bg relative overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 text-white anim-in anim-in-d3">
+              <div className="engrave" />
+              <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                <div className="max-w-xl">
+                  <h2 className="serif m-0 mb-2 sm:mb-3 text-xl sm:text-2xl text-white">Your relationship team</h2>
+                  <p className="mb-5 sm:mb-6 text-sm leading-relaxed text-[#D5DEE8]">A named advisor is assigned to your account. Book a call or send a secure message anytime.</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" onClick={() => selectSection('support')} className="btn btn-gold relative !px-4 !py-2 sm:!px-5 sm:!py-2.5 text-sm">Schedule a call</button>
+                    <button type="button" onClick={() => selectSection('support')} className="btn relative border border-white/25 bg-white/5 !px-4 !py-2 sm:!px-5 sm:!py-2.5 text-sm text-white hover:bg-white/10">Send a message</button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 pr-5 backdrop-blur-sm">
+                  <div className="flex -space-x-2">
+                    {['EM', 'JO', 'SK'].map((i) => (
+                      <span key={i} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0F2A43] bg-gradient-to-b from-[#EDD595] to-[#C9A24B] text-xs font-semibold text-[#0A1D30]">{i}</span>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Team of three</p>
+                    <p className="whitespace-nowrap text-xs text-[#A8B8C8]">Usually replies within 1 hour</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -688,7 +777,7 @@ export default function Dashboard({ go: goProp } = {}) {
     <div className="ap w-full max-w-none h-[100dvh] antialiased overflow-hidden flex flex-col">
       <style>{styles}</style>
 
-      <header className="shrink-0 z-40 w-full border-b border-[#DDD8CC]/80 bg-white/90 backdrop-blur-md">
+      <header className="dash-header relative shrink-0 z-40 w-full border-b border-[#DDD8CC]/80 bg-white/90 backdrop-blur-md">
         <div className="flex h-14 sm:h-16 w-full items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 lg:px-8">
           <button
             type="button"
@@ -764,17 +853,23 @@ export default function Dashboard({ go: goProp } = {}) {
       </header>
 
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-        <aside className="hidden w-56 xl:w-64 2xl:w-72 shrink-0 border-r border-[#DDD8CC]/80 bg-white/90 backdrop-blur-sm lg:flex lg:flex-col overflow-hidden">
+        <aside className="dash-aside relative z-10 hidden w-56 xl:w-64 2xl:w-72 shrink-0 border-r border-[#DDD8CC]/80 bg-white/90 backdrop-blur-sm lg:flex lg:flex-col overflow-hidden">
           <nav className="flex-1 overflow-y-auto overscroll-contain space-y-0.5 p-2 sm:p-3" aria-label="Dashboard">
             {renderMenuItems(false)}
           </nav>
         </aside>
 
         <main className="min-w-0 flex-1 w-full overflow-y-auto overscroll-contain px-3 py-5 sm:px-5 sm:py-6 md:px-6 lg:px-8 xl:px-10">
-          {section !== 'overview' && (
-            <p className="mb-4 sm:mb-6 text-sm font-medium text-[#8A6A26] anim-in">{current.label}</p>
-          )}
-          {content()}
+          <div className="mx-auto w-full max-w-[1280px]">
+            {section !== 'overview' && (
+              <nav aria-label="Breadcrumb" className="mb-4 sm:mb-6 flex items-center gap-2 text-sm anim-in">
+                <button type="button" onClick={() => selectSection('overview')} className="font-medium text-[#4A5B6C] hover:text-[#0F2A43] transition">Overview</button>
+                <svg className="h-3.5 w-3.5 text-[#B08A3E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" /></svg>
+                <span className="font-semibold text-[#8A6A26]">{current.label}</span>
+              </nav>
+            )}
+            {content()}
+          </div>
         </main>
       </div>
     </div>
