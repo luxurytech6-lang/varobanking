@@ -13,7 +13,7 @@ html { scroll-behavior:smooth; }
 .ap input[type=range] { accent-color:#D8B76A; width:100%; }
 
 /* Surfaces */
-.ap .navy-bg { background: radial-gradient(900px 500px at 85% -10%, #1F4D78 0%, transparent 60%), radial-gradient(700px 400px at 0% 100%, rgba(176,138,62,.18) 0%, transparent 60%), linear-gradient(160deg,#0F2A43,#0A1D30); }
+.ap .navy-bg { background: repeating-radial-gradient(circle at 85% -5%, rgba(216,183,106,.05) 0 1px, transparent 1px 10px), repeating-radial-gradient(circle at 5% 105%, rgba(216,183,106,.035) 0 1px, transparent 1px 12px), repeating-linear-gradient(115deg, rgba(255,255,255,.014) 0 1px, transparent 1px 6px), radial-gradient(900px 500px at 85% -10%, #1F4D78 0%, transparent 60%), radial-gradient(700px 400px at 0% 100%, rgba(176,138,62,.18) 0%, transparent 60%), linear-gradient(160deg,#0F2A43,#0A1D30); }
 .ap .glass { background:linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.04)); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.2); box-shadow:0 30px 60px -20px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.35); }
 .ap .gloss { position:relative; }
 .ap .gloss::before { content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 42%); }
@@ -80,6 +80,19 @@ html { scroll-behavior:smooth; }
   .ap .rv { opacity:1; transform:none; }
   .ap .draw { stroke-dashoffset:0; }
 }
+
+/* ---------- Texture & elegance pass ---------- */
+/* Fine paper grain over every surface — felt, not seen */
+.ap::after { content:''; position:fixed; inset:0; z-index:70; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:160px; opacity:.045; mix-blend-mode:overlay; }
+/* Elegant gold keyline inside raised cards */
+.ap .spot { position:relative; }
+.ap .spot::after { content:''; position:absolute; inset:10px; border:1px solid rgba(176,138,62,.14);
+  border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .35s; }
+.ap .spot:hover::after { opacity:1; }
+/* Refined hairline dividers get a faint gold core */
+.ap .dots { background-image:radial-gradient(rgba(216,183,106,.4) 1.1px, transparent 1.1px), radial-gradient(rgba(216,183,106,.12) 1.1px, transparent 1.1px); background-size:22px 22px, 22px 22px; background-position:0 0, 11px 11px; }
 `;
 
 /* ---------- Hooks and helpers ---------- */
