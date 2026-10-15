@@ -93,6 +93,17 @@ html { scroll-behavior:smooth; }
 .ap .spot:hover::after { opacity:1; }
 /* Refined hairline dividers get a faint gold core */
 .ap .dots { background-image:radial-gradient(rgba(216,183,106,.4) 1.1px, transparent 1.1px), radial-gradient(rgba(216,183,106,.12) 1.1px, transparent 1.1px); background-size:22px 22px, 22px 22px; background-position:0 0, 11px 11px; }
+
+/* ---------- Depth ---------- */
+/* Deep navy fields gain an inner vignette so foreground content sits forward */
+.ap section.navy-bg { box-shadow: inset 0 90px 160px -90px rgba(0,0,0,.5), inset 0 -90px 160px -90px rgba(0,0,0,.55); }
+/* Raised cards feel layered at rest, and lift further on hover */
+.ap article.spot { box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 1px 2px rgba(15,42,67,.05), 0 18px 36px -24px rgba(15,42,67,.4); }
+.ap .spot:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 4px 10px rgba(15,42,67,.08), 0 40px 70px -28px rgba(15,42,67,.55); }
+/* Floating glass panels read as truly lifted above the surface */
+.ap .glass { box-shadow: 0 2px 6px rgba(0,0,0,.25), 0 44px 90px -30px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.4); }
+/* A quiet raised bevel + ambient shadow for solid white cards that float on navy */
+.ap .lift { box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(10,29,48,.12), 0 40px 80px -34px rgba(10,29,48,.55); }
 `;
 
 /* ---------- Hooks and helpers ---------- */
@@ -601,12 +612,21 @@ function Avatar({ name, src, size = 'h-12 w-12' }) {
   );
 }
 
-function LangSelect({ lang, setLang, className = '' }) {
+function LangSelect({ lang, setLang, className = '', dark = false }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <svg className="h-5 w-5 shrink-0 text-[#8A6A26]" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" /></svg>
-      <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)} className="min-w-0 flex-1 rounded-md border border-[#DDD8CC] bg-white px-2 py-1.5 text-[15px] text-[#0F2A43]">
-        {langs.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      <svg className={`h-4 w-4 shrink-0 ${dark ? 'text-[#C5D0DC]' : 'text-[#8A6A26]'}`} fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" /></svg>
+      <select
+        aria-label="Language"
+        value={lang}
+        onChange={(e) => setLang(e.target.value)}
+        className={
+          dark
+            ? 'min-w-0 cursor-pointer rounded border-0 bg-transparent py-1 pl-0 pr-5 text-xs text-[#C5D0DC] transition-colors hover:text-white focus:text-white'
+            : 'min-w-0 flex-1 rounded-md border border-[#DDD8CC] bg-white px-2 py-1.5 text-[15px] text-[#0F2A43]'
+        }
+      >
+        {langs.map(([c, n]) => <option key={c} value={c} className="text-[#0F2A43]">{n}</option>)}
       </select>
     </span>
   );
@@ -1315,25 +1335,31 @@ export default function Home() {
         <div className={`hidden bg-[#0A1D30] text-xs text-[#C5D0DC] transition-all duration-300 md:block ${scrolled ? 'h-0 overflow-hidden opacity-0' : 'h-9 opacity-100'}`}>
           <div className={`${wrap} flex h-9 items-center justify-between`}>
             <span>Private client line: +1 800 555 0142</span>
-            <div className="flex gap-6"><a href="#" className="hover:text-white">{t('Find an office')}</a><a href="#" className="hover:text-white">{t('Careers')}</a></div>
+            <div className="flex items-center gap-6">
+              <a href="#" className="hover:text-white">{t('Find an office')}</a>
+              <a href="#" className="hover:text-white">{t('Careers')}</a>
+              <span className="h-3.5 w-px bg-white/15" aria-hidden="true" />
+              <LangSelect lang={lang} setLang={setLang} dark />
+            </div>
           </div>
         </div>
         <div className={`border-b transition-all duration-300 ${scrolled ? 'border-[#DDD8CC] bg-white/85 shadow-lg backdrop-blur-xl' : 'border-[#DDD8CC] bg-white'}`}>
-          <div className={`${wrap} flex h-[72px] items-center justify-between`}>
-            <Link to="/" go={go} className="group flex items-center gap-3" aria-label="Aurelia Private home">
-              <span className="serif gloss flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-b from-[#1E4B73] to-[#0F2A43] text-xl text-[#EDD595] transition-transform duration-300 group-hover:scale-105">A</span>
-              <span className="serif text-xl text-[#0F2A43] sm:text-2xl">Aurelia Private</span>
-            </Link>
-            <nav className="hidden items-center gap-8 text-[15px] font-medium text-[#14202E] xl:flex" aria-label="Main">
-              {nav.map(([l, h]) => <Link key={h} to={mode ? `/${h}` : h} go={go} className="navlink relative py-1 transition-colors hover:text-[#8A6A26]">{t(l)}</Link>)}
-            </nav>
-            <div className="hidden items-center gap-3 xl:flex">
-              <LangSelect lang={lang} setLang={setLang} />
-              <Link to="/signin" go={go} aria-current={mode === 'signin' ? 'page' : undefined} className="navlink relative ml-2 inline-flex items-center gap-2 py-1 text-[15px] font-medium text-[#0F2A43] transition-colors hover:text-[#8A6A26]">
+          <div className={`${wrap} flex h-[72px] items-center justify-between gap-6`}>
+            <div className="flex min-w-0 items-center gap-8 2xl:gap-12">
+              <Link to="/" go={go} className="group flex shrink-0 items-center gap-3" aria-label="Aurelia Private home">
+                <span className="serif gloss flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-b from-[#1E4B73] to-[#0F2A43] text-xl text-[#EDD595] transition-transform duration-300 group-hover:scale-105">A</span>
+                <span className="serif whitespace-nowrap text-xl text-[#0F2A43] sm:text-2xl">Aurelia Private</span>
+              </Link>
+              <nav className="hidden items-center gap-6 whitespace-nowrap text-[15px] font-medium text-[#14202E] xl:flex 2xl:gap-8" aria-label="Main">
+                {nav.map(([l, h]) => <Link key={h} to={mode ? `/${h}` : h} go={go} className="navlink relative py-1 transition-colors hover:text-[#8A6A26]">{t(l)}</Link>)}
+              </nav>
+            </div>
+            <div className="hidden shrink-0 items-center gap-5 xl:flex">
+              <Link to="/signin" go={go} aria-current={mode === 'signin' ? 'page' : undefined} className="navlink relative inline-flex items-center gap-2 py-1 text-[15px] font-medium text-[#0F2A43] transition-colors hover:text-[#8A6A26]">
                 <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 20c1.2-3.6 4.2-5.5 8-5.5s6.8 1.9 8 5.5" /></svg>
                 {t('Sign in')}
               </Link>
-              <Link to="/signup" go={go} className="btn btn-navy !px-5 !py-2.5 text-[15px]">{t('Open an account')}</Link>
+              <Link to="/signup" go={go} className="btn btn-navy whitespace-nowrap !px-5 !py-2.5 text-[15px]">{t('Open an account')}</Link>
             </div>
             <div className="flex items-center gap-4 xl:hidden">
               <Link to="/signin" go={go} className="hidden text-[15px] font-medium text-[#0F2A43] hover:text-[#8A6A26] sm:block">{t('Sign in')}</Link>
@@ -1575,7 +1601,7 @@ export default function Home() {
           </div>
           <Reveal delay={0.2} className="relative">
             <div className="float-a glass absolute -left-4 top-24 z-10 hidden rounded-xl px-4 py-3 text-sm text-white md:block">Dividend received<br /><span className="serif text-xl text-[#7FE0A8]">+$3,120.45</span></div>
-            <div className="float-b mx-auto w-full max-w-sm rounded-[36px] border-[6px] border-[#1B2D40] bg-white p-6 shadow-2xl">
+            <div className="float-b mx-auto w-full max-w-sm rounded-[36px] border-[6px] border-[#1B2D40] bg-white p-6 lift">
               <p className="text-sm text-[#4A5B6C]">Available balance</p>
               <p className="serif mb-4 text-4xl tabular-nums text-[#0F2A43]">$412,860.20</p>
               <svg viewBox="0 0 300 70" className="mb-4 h-16 w-full" preserveAspectRatio="none" aria-hidden="true">
