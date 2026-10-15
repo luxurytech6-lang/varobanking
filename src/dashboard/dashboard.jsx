@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Panel, RecentActivity, AccountInfoPage, CardsPage, TrackingPage, InvestingPage, NotificationsPage, LoanPage, SettingsPage } from './pages';
+import { NOTIFICATIONS } from './data';
 
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600&display=swap');
@@ -193,23 +195,6 @@ function DashIcon({ d, className = 'h-5 w-5' }) {
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
       <path d={d} />
     </svg>
-  );
-}
-
-/* Defined at module level so children (and their form state) are not
-   re-mounted every time the dashboard re-renders. */
-function Panel({ title, subtitle, children, action, className = '' }) {
-  return (
-    <div className={`panel rounded-xl sm:rounded-2xl border border-[#DDD8CC] bg-white/95 backdrop-blur-sm p-4 sm:p-6 md:p-8 shadow-sm ${className}`}>
-      <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <div className="min-w-0">
-          <h2 className="serif m-0 text-xl sm:text-2xl text-[#0F2A43] leading-tight">{title}</h2>
-          {subtitle && <p className="mt-1 text-sm text-[#4A5B6C]">{subtitle}</p>}
-        </div>
-        {action}
-      </div>
-      {children}
-    </div>
   );
 }
 
@@ -420,7 +405,10 @@ export default function Dashboard({ go: goProp } = {}) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [animKey, setAnimKey] = useState(0);
+  const mainRef = useRef(null);
   const [beneficiaries, setBeneficiaries] = useState(SEED_BENEFICIARIES);
+  const [notifItems, setNotifItems] = useState(NOTIFICATIONS);
+  const unreadCount = notifItems.filter((n) => !n.read).length;
   const [preselect, setPreselect] = useState(null);
   const addBeneficiary = (b) => setBeneficiaries((list) => [...list, b]);
   const sendTo = (b) => { selectSection(b.kind); setPreselect(b.id); };
@@ -463,23 +451,10 @@ export default function Dashboard({ go: goProp } = {}) {
     { name: 'Aurelia Virtual', last: '7740', exp: '12/27', status: 'Active', type: 'Virtual' },
   ];
 
-  const activity = [
-    ['Meridian Trust', '-$25,000.00', 'Yesterday'],
-    ['Dividend received', '+$3,120.45', '2 days ago'],
-    ['Insurance premium', '-$1,840.00', '5 days ago'],
-    ['FX exchange USD→EUR', '-$10,000.00', '1 week ago'],
-  ];
-  const accounts = [
-    { name: MAIN_ACCOUNT.name, type: MAIN_ACCOUNT.type, bal: usd(MAIN_ACCOUNT.available), num: MAIN_ACCOUNT.num },
-  ];
-  const notifs = [
-    ['Transfer completed', 'USD 12,000 to Meridian Trust', '2h ago'],
-    ['Card payment', 'Boutique Mayfair · $420.00', '5h ago'],
-    ['Review ready', 'Your quarterly portfolio review is available', '1d ago'],
-  ];
 
   const selectSection = (id) => {
     setPreselect(null);
+    if (mainRef.current) mainRef.current.scrollTop = 0;
     setSection(id);
     setAnimKey((k) => k + 1);
     setMobileOpen(false);
@@ -505,164 +480,19 @@ export default function Dashboard({ go: goProp } = {}) {
           />
         );
       case 'account':
-        return (
-          <Panel title="Account info" className="anim-in">
-            <ul className="divide-y divide-[#E8E4DA]">
-              {accounts.map((a) => (
-                <li key={a.name} className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-4 py-4 sm:py-5">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-[#0F2A43]">{a.name}</p>
-                    <p className="text-sm text-[#4A5B6C]">{a.type} · {a.num}</p>
-                  </div>
-                  <p className="text-base sm:text-lg font-semibold tabular-nums text-[#0F2A43] shrink-0">{a.bal}</p>
-                </li>
-              ))}
-            </ul>
-            <dl className="mt-6 sm:mt-8 grid gap-3 sm:gap-4 rounded-xl bg-[#F6F4EF] p-4 sm:p-5 grid-cols-1 sm:grid-cols-2">
-              <div><dt className="text-xs text-[#4A5B6C]">Account holder</dt><dd className="font-medium text-[#0F2A43]">Client name on file</dd></div>
-              <div><dt className="text-xs text-[#4A5B6C]">Relationship manager</dt><dd className="font-medium text-[#0F2A43]">Assigned advisor</dd></div>
-              <div><dt className="text-xs text-[#4A5B6C]">Membership</dt><dd className="font-medium text-[#0F2A43]">Reserve</dd></div>
-              <div><dt className="text-xs text-[#4A5B6C]">Opened</dt><dd className="font-medium text-[#0F2A43]">2026</dd></div>
-            </dl>
-          </Panel>
-        );
+        return <AccountInfoPage available={maskBalance(usd(MAIN_ACCOUNT.available))} />;
       case 'cards':
-        return (
-          <Panel title="Cards" className="anim-in" action={<button type="button" className="btn btn-navy !px-3 !py-2 sm:!px-4 text-sm">Request card</button>}>
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-              {[
-                { name: 'Aurelia Reserve', last: '4821', exp: '09/28', status: 'Active' },
-                { name: 'Aurelia Virtual', last: '7740', exp: '12/27', status: 'Active' },
-                { name: 'Aurelia Travel', last: '1192', exp: '03/29', status: 'Frozen' },
-              ].map((c) => (
-                <div key={c.last} className="card-lift swatch relative aspect-[1.586/1] overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 text-white flex flex-col justify-between" style={{ background: c.status === 'Frozen' ? 'linear-gradient(135deg,#4A5B6C,#1F2A36)' : 'linear-gradient(135deg,#1E4B73,#0A1D30)' }}>
-                  <span className="engrave" />
-                  <div className="relative flex items-start justify-between">
-                    <p className="text-sm text-[#D5DEE8]">{c.name}</p>
-                    <span className="serif text-lg text-[#EDD595]">A</span>
-                  </div>
-                  <span className="chip relative h-7 w-10 rounded-md" aria-hidden="true" />
-                  <p className="serif relative text-xl sm:text-2xl tracking-widest">•••• •••• •••• {c.last}</p>
-                  <div className="relative flex justify-between text-sm">
-                    <span>Exp {c.exp}</span>
-                    <span className={c.status === 'Active' ? 'text-[#7FE0A8]' : 'text-[#FF9A8F]'}>{c.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        );
+        return <CardsPage />;
       case 'tracking':
-        return (
-          <Panel title="Tracking" className="anim-in">
-            <ul className="space-y-3 sm:space-y-4">
-              {[
-                ['Wire to Zurich Private', 'In transit', 'Expected tomorrow'],
-                ['Realtime to Lagos', 'Completed', 'Today 09:14'],
-                ['Card order · virtual', 'Issued', 'Ready in app'],
-              ].map(([t, s, d]) => (
-                <li key={t} className="card-lift flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-3 rounded-xl border border-[#DDD8CC] p-3 sm:p-4 bg-white">
-                  <div className="min-w-0">
-                    <p className="font-medium text-[#0F2A43]">{t}</p>
-                    <p className="text-sm text-[#4A5B6C]">{d}</p>
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold shrink-0 ${s === 'Completed' || s === 'Issued' ? 'bg-[#E7F6EE] text-[#1B7A4B]' : 'bg-[#FBF7EE] text-[#8A6A26]'}`}>{s}</span>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-        );
+        return <TrackingPage />;
       case 'investing':
-        return (
-          <Panel title="Investing" className="anim-in" action={<button type="button" className="btn btn-navy !px-3 !py-2 sm:!px-4 text-sm">View portfolio</button>}>
-            <div className="mb-5 sm:mb-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
-              {[['Total value', '$1.24M'], ['YTD return', '+6.2%'], ['Risk profile', 'Balanced']].map(([l, v]) => (
-                <div key={l} className="rounded-xl bg-[#F6F4EF] p-3 sm:p-4">
-                  <p className="text-xs text-[#4A5B6C]">{l}</p>
-                  <p className="serif mt-1 text-lg sm:text-xl text-[#0F2A43]">{v}</p>
-                </div>
-              ))}
-            </div>
-            <ul className="divide-y divide-[#E8E4DA]">
-              {[['Global equity', '42%', '+8.1%'], ['Fixed income', '35%', '+2.4%'], ['Alternatives', '15%', '+4.0%'], ['Cash', '8%', '—']].map(([n, a, r]) => (
-                <li key={n} className="flex items-center justify-between gap-2 sm:gap-4 py-3 sm:py-4">
-                  <span className="font-medium text-[#14202E] min-w-0 truncate">{n}</span>
-                  <span className="tabular-nums text-[#4A5B6C] shrink-0 text-sm sm:text-base">{a}</span>
-                  <span className="w-12 sm:w-16 text-right font-semibold tabular-nums text-[#1B7A4B] shrink-0 text-sm sm:text-base">{r}</span>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-        );
+        return <InvestingPage />;
       case 'notifications':
-        return (
-          <Panel title="Notifications" className="anim-in">
-            <ul className="divide-y divide-[#E8E4DA]">
-              {notifs.map(([t, d, when]) => (
-                <li key={t} className="py-3 sm:py-4">
-                  <p className="font-medium text-[#0F2A43]">{t}</p>
-                  <p className="text-sm text-[#3D4C5B]">{d}</p>
-                  <p className="mt-1 text-xs text-[#4A5B6C]">{when}</p>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-        );
+        return <NotificationsPage items={notifItems} setItems={setNotifItems} />;
       case 'loan':
-        return (
-          <Panel title="Loan" className="anim-in">
-            <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#DDD8CC] p-4 sm:p-5">
-                <p className="text-sm text-[#4A5B6C]">Lombard facility</p>
-                <p className="serif mt-2 text-xl sm:text-2xl text-[#0F2A43]">$500,000</p>
-                <p className="mt-1 text-xs text-[#4A5B6C]">Available · against portfolio</p>
-              </div>
-              <div className="rounded-xl border border-[#DDD8CC] p-4 sm:p-5">
-                <p className="text-sm text-[#4A5B6C]">Outstanding</p>
-                <p className="serif mt-2 text-xl sm:text-2xl text-[#0F2A43]">$0</p>
-                <p className="mt-1 text-xs text-[#4A5B6C]">No active drawdowns</p>
-              </div>
-            </div>
-            <form className="w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Request amount</label>
-                <input type="number" min="1000" className={field} placeholder="Minimum $1,000" />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Purpose</label>
-                <select className={field}>
-                  <option>Liquidity</option>
-                  <option>Property</option>
-                  <option>Business</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <button type="submit" className="btn btn-navy w-full sm:w-auto">Request facility</button>
-            </form>
-          </Panel>
-        );
+        return <LoanPage />;
       case 'settings':
-        return (
-          <Panel title="Settings" className="anim-in">
-            <div className="mx-auto w-full max-w-lg space-y-5 sm:space-y-6">
-              {[
-                ['Email alerts', 'Transfers, cards, and security'],
-                ['Two-factor authentication', 'App or SMS codes'],
-                ['Statement language', 'English'],
-                ['Marketing preferences', 'Market notes monthly'],
-              ].map(([t, d]) => (
-                <div key={t} className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 border-b border-[#E8E4DA] pb-4">
-                  <div className="min-w-0">
-                    <p className="font-medium text-[#0F2A43]">{t}</p>
-                    <p className="text-sm text-[#4A5B6C]">{d}</p>
-                  </div>
-                  <button type="button" className="text-sm font-semibold text-[#8A6A26] underline underline-offset-4 shrink-0">Edit</button>
-                </div>
-              ))}
-              <button type="button" onClick={() => go('/signin')} className="btn btn-outline w-full">Sign out</button>
-            </div>
-          </Panel>
-        );
+        return <SettingsPage onSignOut={() => go('/signin')} />;
       case 'support':
         return (
           <Panel title="Support" className="anim-in">
@@ -851,19 +681,7 @@ export default function Dashboard({ go: goProp } = {}) {
                 </div>
               </Panel>
 
-              <Panel title="Recent activity">
-                <ul className="divide-y divide-[#E8E4DA]">
-                  {activity.map(([n, a, d]) => (
-                    <li key={n} className="flex items-center justify-between gap-3 sm:gap-4 py-3 sm:py-3.5">
-                      <div className="min-w-0">
-                        <p className="font-medium text-[#14202E] truncate text-sm sm:text-base">{n}</p>
-                        <p className="text-xs text-[#4A5B6C]">{d}</p>
-                      </div>
-                      <span className={`font-semibold tabular-nums shrink-0 text-sm sm:text-base ${a.startsWith('+') ? 'text-[#1B7A4B]' : 'text-[#0F2A43]'}`}>{a}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
+              <RecentActivity />
             </div>
 
             {/* Relationship team */}
@@ -951,22 +769,22 @@ export default function Dashboard({ go: goProp } = {}) {
             <div className="relative">
               <button
                 type="button"
-                aria-label="Notifications"
+                aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
                 aria-expanded={notifOpen}
                 onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); setMobileOpen(false); }}
                 className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#0F2A43] hover:bg-[#F6F4EF] transition"
               >
                 <DashIcon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" className="h-[22px] w-[22px]" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#C0392B] ring-2 ring-white" />
+                {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#C0392B] ring-2 ring-white" />}
               </button>
               {notifOpen && (
                 <div className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-[#DDD8CC] bg-white/95 backdrop-blur-md p-2 shadow-xl anim-in">
-                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#4A5B6C]">Notifications</p>
-                  {notifs.map(([t, d, when]) => (
-                    <button key={t} type="button" onClick={() => selectSection('notifications')} className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-[#F6F4EF] transition">
-                      <p className="text-sm font-medium text-[#0F2A43]">{t}</p>
-                      <p className="text-xs text-[#4A5B6C] line-clamp-2">{d}</p>
-                      <p className="mt-0.5 text-[11px] text-[#4A5B6C]">{when}</p>
+                  <p className="px-3 py-2 text-xs font-semibold text-[#4A5B6C]">Notifications{unreadCount ? ` · ${unreadCount} unread` : ''}</p>
+                  {notifItems.slice(0, 3).map((n) => (
+                    <button key={n.id} type="button" onClick={() => { setNotifItems((l) => l.map((x) => (x.id === n.id ? { ...x, read: true } : x))); selectSection('notifications'); }} className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-[#F6F4EF] transition">
+                      <p className="flex items-center gap-2 text-sm font-medium text-[#0F2A43]">{n.title}{!n.read && <span className="h-1.5 w-1.5 rounded-full bg-[#C9A24B]" aria-label="Unread" />}</p>
+                      <p className="text-xs text-[#4A5B6C] line-clamp-2">{n.body}</p>
+                      <p className="mt-0.5 text-[11px] text-[#4A5B6C]">{n.day} · {n.time}</p>
                     </button>
                   ))}
                   <button type="button" onClick={() => selectSection('notifications')} className="mt-1 w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-[#8A6A26] hover:bg-[#F6F4EF] transition">View all</button>
@@ -1012,7 +830,7 @@ export default function Dashboard({ go: goProp } = {}) {
           </nav>
         </aside>
 
-        <main className="min-w-0 flex-1 w-full overflow-y-auto overscroll-contain px-3 py-5 sm:px-5 sm:py-6 md:px-6 lg:px-8 xl:px-10">
+        <main ref={mainRef} className="min-w-0 flex-1 w-full overflow-y-auto overscroll-contain px-3 py-5 sm:px-5 sm:py-6 md:px-6 lg:px-8 xl:px-10">
           <div className="mx-auto w-full max-w-[1280px]">
             {section !== 'overview' && (
               <nav aria-label="Breadcrumb" className="mb-4 sm:mb-6 flex items-center gap-2 text-sm anim-in">
