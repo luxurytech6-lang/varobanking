@@ -59,7 +59,7 @@ html { scroll-behavior:smooth; }
 .ap article.spot { box-shadow:0 1px 0 rgba(15,42,67,.04), 0 14px 32px -22px rgba(15,42,67,.35); }
 @keyframes menuIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
 .ap .menu-in { animation:menuIn .22s ease both; }
-.ap .auth-input { width:100%; border-radius:8px; border:1px solid #CFC9BA; background:#fff; padding:.8rem 1rem; color:#14202E; transition:border-color .2s, box-shadow .2s; }
+.ap .auth-input { width:100%; border-radius:7px; border:1px solid #CFC9BA; background:#fff; padding:.6rem .85rem; font-size:15px; color:#14202E; transition:border-color .2s, box-shadow .2s; }
 .ap .auth-input:hover { border-color:#B08A3E; }
 .ap .auth-input:focus { border-color:#B08A3E; box-shadow:0 0 0 3px rgba(216,183,106,.35); }
 .ap .auth-input[aria-invalid=true] { border-color:#B3261E; }
@@ -722,7 +722,7 @@ function AuthSuccess({ up, forgot, go }) {
       <h1 className="serif mb-3 text-3xl text-[#0F2A43]">
         {up ? 'Account creation successful' : forgot ? 'Password updated' : 'You are signed in'}
       </h1>
-      <p className="mx-auto mb-8 max-w-sm leading-relaxed text-[#3D4C5B]">
+      <p className="mx-auto mb-5 max-w-sm leading-relaxed text-[#3D4C5B]">
         {up
           ? 'Your account has been created. Redirecting you to your dashboard…'
           : forgot
@@ -884,15 +884,15 @@ function AuthPage({ mode, go, t }) {
 
   const stepLabel = ['', 'Details', 'Verify', 'Address', 'Identity'];
   const Stepper = () => (
-    <div className="mb-8" aria-label="Registration progress">
-      <ol className="flex items-center gap-1.5 sm:gap-2">
+    <div className="mb-5" aria-label="Registration progress">
+      <ol className="flex items-center gap-1.5">
         {[1, 2, 3, 4].map((n) => (
-          <li key={n} className="flex flex-1 items-center gap-1.5 sm:gap-2">
-            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold sm:h-8 sm:w-8 sm:text-sm ${step > n ? 'bg-[#1B7A4B] text-white' : step === n ? 'bg-[#0F2A43] text-white' : 'bg-[#EFEADC] text-[#4A5B6C]'}`}>
+          <li key={n} className={`flex min-w-0 items-center gap-1.5 ${n < 4 ? 'flex-1' : 'flex-none'}`}>
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${step > n ? 'bg-[#1B7A4B] text-white' : step === n ? 'bg-[#0F2A43] text-white' : 'bg-[#EFEADC] text-[#4A5B6C]'}`}>
               {step > n ? '✓' : n}
             </span>
             <span className={`hidden text-[11px] font-medium sm:block ${step === n ? 'text-[#0F2A43]' : 'text-[#4A5B6C]'}`}>{stepLabel[n]}</span>
-            {n < 4 && <span className={`h-px flex-1 ${step > n ? 'bg-[#1B7A4B]' : 'bg-[#E4DFD2]'}`} />}
+            {n < 4 && <span className={`h-px min-w-[8px] flex-1 ${step > n ? 'bg-[#1B7A4B]' : 'bg-[#E4DFD2]'}`} />}
           </li>
         ))}
       </ol>
@@ -900,21 +900,21 @@ function AuthPage({ mode, go, t }) {
   );
 
   return (
-    <section className="navy-bg relative min-h-screen overflow-hidden pb-20 pt-28 md:pt-44">
+    <section className="navy-bg relative min-h-screen overflow-hidden pb-16 pt-28 md:pt-36">
       <Photo src={images.auth} eager position="center 30%" className="opacity-40" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0A1D30]/85 to-[#0A1D30]/50" />
       <div className="orb -left-20 top-24 h-[420px] w-[420px] bg-[#B08A3E]/25" />
       <div className="orb right-0 top-0 h-[480px] w-[480px] bg-[#2A6CA8]/40" style={{ animationDelay: '-6s' }} />
       <Guilloche className="pointer-events-none absolute -left-64 top-1/2 h-[900px] w-[900px] -translate-y-1/2 opacity-50" />
-      <div className={`${wrap} relative grid items-center gap-12 lg:grid-cols-[1fr_minmax(0,520px)] xl:gap-28`}>
+      <div className={`${wrap} relative grid items-center gap-12 lg:grid-cols-[1fr_minmax(0,440px)] xl:gap-28`}>
         <div className="hidden lg:block">
           <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur"><span className="h-2 w-2 rounded-full bg-[#7FE0A8]" />{t('Serving private clients since 1892')}</p>
-          <h1 className="serif mb-8 max-w-xl text-4xl leading-[1.1] text-white xl:text-5xl">
+          <h1 className="serif mb-5 max-w-xl text-4xl leading-[1.1] text-white xl:text-5xl">
             {up ? 'Start with one advisor and one view of everything you own.'
               : forgot ? 'Reset your password securely in a few steps.'
               : 'Your accounts, your advisor, and your documents in one secure place.'}
           </h1>
-          <ul className="mb-10 max-w-lg space-y-5">
+          <ul className="mb-10 max-w-lg space-y-3.5">
             {security.slice(0, 3).map(([h, d]) => (
               <li key={h} className="flex gap-4">
                 <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#D8B76A]/20 text-sm text-[#EDD595]" aria-hidden="true">✓</span>
@@ -929,7 +929,7 @@ function AuthPage({ mode, go, t }) {
         </div>
 
         <Reveal>
-          <div className="rounded-3xl bg-white p-7 shadow-[0_40px_80px_-30px_rgba(0,0,0,.6)] sm:p-10">
+          <div className="rounded-2xl bg-white p-6 shadow-[0_40px_80px_-30px_rgba(0,0,0,.6)] sm:p-8">
             {/* —— Done —— */}
             {step === 5 ? (
               <AuthSuccess up={up} forgot={forgot} go={go} />
@@ -937,17 +937,17 @@ function AuthPage({ mode, go, t }) {
               <>
                 {/* Tabs only on first step of signup / signin form */}
                 {step === 1 && !forgot && (
-                  <div className="mb-8 flex gap-1 rounded-lg bg-[#EFEADC] p-1">{tab('/signin', t('Sign in'), !up)}{tab('/signup', t('Create account'), up)}</div>
+                  <div className="mb-5 flex gap-1 rounded-lg bg-[#EFEADC] p-1">{tab('/signin', t('Sign in'), !up)}{tab('/signup', t('Create account'), up)}</div>
                 )}
 
                 {/* —— Step 1: Account details (signup/signin) or forgot email —— */}
                 {step === 1 && !forgot && (
                   <>
                     {up && <Stepper />}
-                    <h1 className="serif text-3xl text-[#0F2A43]">{up ? t('Open your account') : t('Welcome back')}</h1>
-                    <p className="mb-8 mt-2 text-[#3D4C5B]">{up ? 'Tell us a little about you. It takes about two minutes.' : 'Sign in to see your accounts and message your advisor.'}</p>
+                    <h1 className="serif m-0 text-2xl text-[#0F2A43]">{up ? t('Open your account') : t('Welcome back')}</h1>
+                    <p className="mb-5 mt-2 text-[#3D4C5B]">{up ? 'Tell us a little about you. It takes about two minutes.' : 'Sign in to see your accounts and message your advisor.'}</p>
 
-                    <form onSubmit={submitDetails} className="space-y-5">
+                    <form onSubmit={submitDetails} className="space-y-3.5">
                       {up && (
                         <>
                           <div>
@@ -971,7 +971,7 @@ function AuthPage({ mode, go, t }) {
                               ))}
                             </div>
                           </div>
-                          <div className="grid gap-5 sm:grid-cols-2">
+                          <div className="grid gap-3.5 sm:grid-cols-2">
                             <div className="sm:col-span-2">
                               <label htmlFor="su-name" className="mb-1.5 block text-sm font-medium text-[#14202E]">Full name</label>
                               <input id="su-name" className="auth-input" autoComplete="name" required />
@@ -984,7 +984,7 @@ function AuthPage({ mode, go, t }) {
                               </select>
                             </div>
                             <div>
-                              <label htmlFor="su-tier" className="mb-1.5 block text-sm font-medium text-[#14202E]">Membership of interest</label>
+                              <label htmlFor="su-tier" className="mb-1.5 block text-sm font-medium text-[#14202E]">Membership</label>
                               <select id="su-tier" className="auth-input" defaultValue="Not sure yet">
                                 {['Classic', 'Reserve', 'Sovereign (by invitation)', 'Not sure yet'].map((c) => <option key={c}>{c}</option>)}
                               </select>
@@ -1025,20 +1025,20 @@ function AuthPage({ mode, go, t }) {
                         <label className="flex items-center gap-3 text-sm text-[#3D4C5B]"><input type="checkbox" className="h-4 w-4 accent-[#0F2A43]" />Keep me signed in on this device</label>
                       )}
 
-                      <button type="submit" className="btn btn-navy w-full">{up ? t('Create account') : t('Sign in')}</button>
+                      <button type="submit" className="btn btn-navy w-full !py-3 text-[15px]">{up ? t('Create account') : t('Sign in')}</button>
                     </form>
 
                     {!up && (
                       <>
                         <div className="my-6 flex items-center gap-4 text-xs text-[#4A5B6C]"><span className="h-px flex-1 bg-[#DDD8CC]" />or<span className="h-px flex-1 bg-[#DDD8CC]" /></div>
-                        <button type="button" className="btn btn-outline flex w-full items-center justify-center gap-3">
+                        <button type="button" className="btn btn-outline flex w-full items-center justify-center gap-3 !py-3 text-[15px]">
                           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 11v3a6 6 0 01-1.5 4M8 14a4 4 0 018 0c0 2-.4 3.7-1.2 5M5 12a7 7 0 0114 0c0 1.5-.1 3-.5 4.5M3.5 9A9.5 9.5 0 0112 3a9.5 9.5 0 018.5 6" /></svg>
-                          Sign in with Face ID or fingerprint
+                          Use Face ID or fingerprint
                         </button>
                       </>
                     )}
 
-                    <p className="mt-8 text-center text-sm text-[#3D4C5B]">
+                    <p className="mt-6 text-center text-sm text-[#3D4C5B]">
                       {up ? 'Already a client? ' : 'New to Aurelia Private? '}
                       <Link to={up ? '/signin' : '/signup'} go={go} className="font-semibold text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">{up ? t('Sign in') : t('Open an account')}</Link>
                     </p>
@@ -1048,15 +1048,15 @@ function AuthPage({ mode, go, t }) {
                 {/* —— Forgot password: email —— */}
                 {forgot && step === 1 && (
                   <>
-                    <h1 className="serif text-3xl text-[#0F2A43]">Forgot password</h1>
-                    <p className="mb-8 mt-2 text-[#3D4C5B]">Enter the email on your account. We will send an 8-digit code to reset your password.</p>
-                    <form onSubmit={submitForgotEmail} className="space-y-5">
+                    <h1 className="serif m-0 text-2xl text-[#0F2A43]">Forgot password</h1>
+                    <p className="mb-5 mt-2 text-[#3D4C5B]">Enter the email on your account. We will send an 8-digit code to reset your password.</p>
+                    <form onSubmit={submitForgotEmail} className="space-y-3.5">
                       <div>
                         <label htmlFor="fp-email" className="mb-1.5 block text-sm font-medium text-[#14202E]">Email</label>
                         <input id="fp-email" type="email" className="auth-input" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                       </div>
                       {err && <p role="alert" className="text-sm text-[#B3261E]">{err}</p>}
-                      <button type="submit" className="btn btn-navy w-full">Send reset code</button>
+                      <button type="submit" className="btn btn-navy w-full !py-3 text-[15px]">Send reset code</button>
                       <p className="text-center text-sm text-[#3D4C5B]">
                         Remember your password?{' '}
                         <Link to="/signin" go={go} className="font-semibold text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">{t('Sign in')}</Link>
@@ -1069,11 +1069,11 @@ function AuthPage({ mode, go, t }) {
                 {(up || forgot) && step === 2 && (
                   <>
                     {up && <Stepper />}
-                    <h1 className="serif text-3xl text-[#0F2A43]">{forgot ? 'Enter reset code' : 'Verify your email'}</h1>
-                    <p className="mb-8 mt-2 text-[#3D4C5B]">
+                    <h1 className="serif m-0 text-2xl text-[#0F2A43]">{forgot ? 'Enter reset code' : 'Verify your email'}</h1>
+                    <p className="mb-5 mt-2 text-[#3D4C5B]">
                       We sent an 8-digit code to <span className="font-semibold text-[#0F2A43]">{email || 'your email'}</span>. Enter it below to continue.
                     </p>
-                    <form onSubmit={submitOtp} className="space-y-6">
+                    <form onSubmit={submitOtp} className="space-y-4">
                       <div>
                         <label htmlFor="otp-0" className="sr-only">One-time password</label>
                         <div className="flex justify-between gap-1.5 sm:gap-2" onPaste={onOtpPaste}>
@@ -1096,7 +1096,7 @@ function AuthPage({ mode, go, t }) {
                         </div>
                         {err && <p role="alert" className="mt-3 text-sm text-[#B3261E]">{err}</p>}
                       </div>
-                      <button type="submit" className="btn btn-navy w-full">Verify and continue</button>
+                      <button type="submit" className="btn btn-navy w-full !py-3 text-[15px]">Verify and continue</button>
                       <div className="flex items-center justify-between text-sm">
                         <button type="button" onClick={() => { setStep(1); setErr(''); }} className="font-medium text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">Back</button>
                         <button
@@ -1115,9 +1115,9 @@ function AuthPage({ mode, go, t }) {
                 {/* —— Forgot: new password —— */}
                 {forgot && step === 3 && (
                   <>
-                    <h1 className="serif text-3xl text-[#0F2A43]">Set a new password</h1>
-                    <p className="mb-8 mt-2 text-[#3D4C5B]">Choose a strong password for your account.</p>
-                    <form onSubmit={submitNewPassword} className="space-y-5">
+                    <h1 className="serif m-0 text-2xl text-[#0F2A43]">Set a new password</h1>
+                    <p className="mb-5 mt-2 text-[#3D4C5B]">Choose a strong password for your account.</p>
+                    <form onSubmit={submitNewPassword} className="space-y-3.5">
                       <div>
                         <label htmlFor="np-pw" className="mb-1.5 block text-sm font-medium text-[#14202E]">New password</label>
                         <div className="relative">
@@ -1134,7 +1134,7 @@ function AuthPage({ mode, go, t }) {
                         <input id="np-pw2" type={show ? 'text' : 'password'} value={pw2} onChange={(e) => setPw2(e.target.value)} className="auth-input" autoComplete="new-password" minLength={8} required />
                       </div>
                       {err && <p role="alert" className="text-sm text-[#B3261E]">{err}</p>}
-                      <button type="submit" className="btn btn-navy w-full">Update password</button>
+                      <button type="submit" className="btn btn-navy w-full !py-3 text-[15px]">Update password</button>
                       <button type="button" onClick={() => { setStep(2); setErr(''); }} className="w-full text-center text-sm font-medium text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">Back</button>
                     </form>
                   </>
@@ -1144,9 +1144,9 @@ function AuthPage({ mode, go, t }) {
                 {up && step === 3 && (
                   <>
                     <Stepper />
-                    <h1 className="serif text-3xl text-[#0F2A43]">Your address</h1>
-                    <p className="mb-8 mt-2 text-[#3D4C5B]">We need a residential address for account opening and regulatory checks.</p>
-                    <form onSubmit={submitAddress} className="space-y-5">
+                    <h1 className="serif m-0 text-2xl text-[#0F2A43]">Your address</h1>
+                    <p className="mb-5 mt-2 text-[#3D4C5B]">We need a residential address for account opening and regulatory checks.</p>
+                    <form onSubmit={submitAddress} className="space-y-3.5">
                       <div>
                         <label htmlFor="ad-line1" className="mb-1.5 block text-sm font-medium text-[#14202E]">Street address</label>
                         <input id="ad-line1" className="auth-input" autoComplete="address-line1" required />
@@ -1155,7 +1155,7 @@ function AuthPage({ mode, go, t }) {
                         <label htmlFor="ad-line2" className="mb-1.5 block text-sm font-medium text-[#14202E]">Apartment, suite, or unit <span className="font-normal text-[#4A5B6C]">(optional)</span></label>
                         <input id="ad-line2" className="auth-input" autoComplete="address-line2" />
                       </div>
-                      <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="grid gap-3.5 sm:grid-cols-2">
                         <div>
                           <label htmlFor="ad-city" className="mb-1.5 block text-sm font-medium text-[#14202E]">City</label>
                           <input id="ad-city" className="auth-input" autoComplete="address-level2" required />
@@ -1165,7 +1165,7 @@ function AuthPage({ mode, go, t }) {
                           <input id="ad-state" className="auth-input" autoComplete="address-level1" required />
                         </div>
                       </div>
-                      <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="grid gap-3.5 sm:grid-cols-2">
                         <div>
                           <label htmlFor="ad-postal" className="mb-1.5 block text-sm font-medium text-[#14202E]">Postal / ZIP code</label>
                           <input id="ad-postal" className="auth-input" autoComplete="postal-code" required />
@@ -1179,7 +1179,7 @@ function AuthPage({ mode, go, t }) {
                         </div>
                       </div>
                       {err && <p role="alert" className="text-sm text-[#B3261E]">{err}</p>}
-                      <button type="submit" className="btn btn-navy w-full">Continue to identity</button>
+                      <button type="submit" className="btn btn-navy w-full !py-3 text-[15px]">Continue to identity</button>
                       <button type="button" onClick={() => { setStep(2); setErr(''); }} className="w-full text-center text-sm font-medium text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">Back to verification</button>
                     </form>
                   </>
@@ -1189,9 +1189,9 @@ function AuthPage({ mode, go, t }) {
                 {up && step === 4 && (
                   <>
                     <Stepper />
-                    <h1 className="serif text-3xl text-[#0F2A43]">Verify your identity</h1>
-                    <p className="mb-8 mt-2 text-[#3D4C5B]">Regulations require us to confirm who you are before opening an account.</p>
-                    <form onSubmit={submitIdentity} className="space-y-5">
+                    <h1 className="serif m-0 text-2xl text-[#0F2A43]">Verify your identity</h1>
+                    <p className="mb-5 mt-2 text-[#3D4C5B]">Regulations require us to confirm who you are before opening an account.</p>
+                    <form onSubmit={submitIdentity} className="space-y-3.5">
                       <div>
                         <label htmlFor="id-dob" className="mb-1.5 block text-sm font-medium text-[#14202E]">Date of birth</label>
                         <input id="id-dob" type="date" className="auth-input" autoComplete="bday" required max={maxDob} />
@@ -1240,7 +1240,7 @@ function AuthPage({ mode, go, t }) {
                         </label>
                       </div>
                       {err && <p role="alert" className="text-sm text-[#B3261E]">{err}</p>}
-                      <button type="submit" className="btn btn-navy w-full">Complete registration</button>
+                      <button type="submit" className="btn btn-navy w-full !py-3 text-[15px]">Complete registration</button>
                       <button type="button" onClick={() => { setStep(3); setErr(''); }} className="w-full text-center text-sm font-medium text-[#8A6A26] underline underline-offset-4 hover:text-[#0F2A43]">Back to address</button>
                     </form>
                   </>
