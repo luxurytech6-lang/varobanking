@@ -1,0 +1,782 @@
+import { useState, useEffect } from 'react';
+
+const styles = `
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600&display=swap');
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+.ap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  font-family: 'Public Sans', system-ui, sans-serif;
+  color: #14202E;
+  box-sizing: border-box;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(201,162,75,0.08), transparent 55%),
+    radial-gradient(900px 500px at 95% 20%, rgba(30,75,115,0.06), transparent 50%),
+    #F6F4EF;
+}
+.ap *, .ap *::before, .ap *::after { box-sizing: border-box; }
+.ap .serif { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; letter-spacing: -0.015em; }
+.ap .navy-bg { background: radial-gradient(900px 500px at 85% -10%, #1F4D78 0%, transparent 60%), linear-gradient(160deg, #0F2A43, #0A1D30); }
+.ap .gloss { position: relative; }
+.ap .gloss::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 42%); }
+.ap .btn { position: relative; overflow: hidden; border-radius: 4px; padding: 0.875rem 1.5rem; font-weight: 600; transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s; display: inline-block; text-align: center; }
+@media (min-width: 640px) { .ap .btn { padding: 1rem 2rem; } }
+.ap .btn:hover { transform: translateY(-2px); }
+.ap .btn:active { transform: translateY(0); }
+.ap .btn-gold { color: #0A1D30; background: linear-gradient(180deg, #EDD595, #C9A24B); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 28px -8px rgba(201,162,75,.65); }
+.ap .btn-navy { color: #fff; background: linear-gradient(180deg, #1E4B73, #0F2A43); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 10px 24px -10px rgba(15,42,67,.7); }
+.ap .btn-outline { color: #0F2A43; background: #fff; border: 1px solid #0F2A43; }
+.ap .btn-outline:hover { background: #F6F4EF; }
+@keyframes ap-blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+}
+.ap .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #22C55E;
+  animation: ap-blink 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes ap-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ap-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ap-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.ap .anim-in {
+  animation: ap-fade-up 0.55s cubic-bezier(.22,1,.36,1) both;
+}
+.ap .anim-in-d1 { animation-delay: 0.06s; }
+.ap .anim-in-d2 { animation-delay: 0.12s; }
+.ap .anim-in-d3 { animation-delay: 0.18s; }
+.ap .anim-in-d4 { animation-delay: 0.24s; }
+.ap .card-lift {
+  transition: transform 0.3s cubic-bezier(.22,1,.36,1), box-shadow 0.3s, border-color 0.25s;
+}
+.ap .card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px -16px rgba(15,42,67,0.18);
+}
+.ap .balance-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(.22,1,.36,1), box-shadow 0.35s;
+}
+.ap .balance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px -16px rgba(10,29,48,0.45);
+}
+.ap .balance-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: ap-shimmer 6s ease-in-out infinite;
+}
+.ap .qa-btn {
+  transition: transform 0.25s cubic-bezier(.22,1,.36,1), border-color 0.2s, background 0.2s, box-shadow 0.25s;
+}
+.ap .qa-btn:hover {
+  transform: translateY(-3px);
+  border-color: #C9A24B;
+  background: #FBF9F4;
+  box-shadow: 0 12px 28px -12px rgba(201,162,75,0.35);
+}
+.ap .qa-btn:active { transform: translateY(-1px); }
+.ap .qa-icon {
+  transition: transform 0.3s cubic-bezier(.22,1,.36,1), background 0.2s;
+}
+.ap .qa-btn:hover .qa-icon {
+  transform: scale(1.08);
+  background: #F0EBE0;
+}
+.ap .menu-item {
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.ap .menu-item:hover:not(.menu-active) {
+  background: #F6F4EF;
+}
+.ap .menu-active {
+  box-shadow: inset 3px 0 0 #C9A24B;
+}
+.ap .panel {
+  transition: box-shadow 0.3s;
+}
+.ap .panel:hover {
+  box-shadow: 0 8px 30px -12px rgba(15,42,67,0.1);
+}
+.ap .eye-btn {
+  transition: background 0.2s, transform 0.2s;
+}
+.ap .eye-btn:hover {
+  background: rgba(255,255,255,0.22);
+  transform: scale(1.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap .anim-in,
+  .ap .balance-card::after,
+  .ap .status-dot { animation: none !important; }
+  .ap .card-lift:hover,
+  .ap .balance-card:hover,
+  .ap .qa-btn:hover { transform: none; }
+}
+`;
+
+const dashMenu = [
+  { id: 'overview', label: 'Overview', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4' },
+  { id: 'transfer', label: 'Realtime bank transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
+  { id: 'wire', label: 'Wire transfer', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { id: 'account', label: 'Account info', icon: 'M3 6h18M3 12h18M3 18h18' },
+  { id: 'cards', label: 'Cards', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { id: 'tracking', label: 'Tracking', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
+  { id: 'investing', label: 'Investing', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+  { id: 'notifications', label: 'Notifications', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
+  { id: 'loan', label: 'Loan', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { id: 'settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+  { id: 'support', label: 'Support', icon: 'M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z' },
+];
+
+function DashIcon({ d, className = 'h-5 w-5' }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
+export default function Dashboard({ go: goProp } = {}) {
+  const go = goProp || ((to) => { try { window.location.assign(to); } catch (e) { /* ignore */ } });
+  const [section, setSection] = useState('overview');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [animKey, setAnimKey] = useState(0);
+  const current = dashMenu.find((m) => m.id === section) || dashMenu[0];
+  const firstName = 'Alex';
+
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setNotifOpen(false);
+        setProfileOpen(false);
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const quickActions = [
+    { id: 'transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
+    { id: 'wire', label: 'Wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id: 'cards', label: 'Cards', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id: 'investing', label: 'Invest', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+  ];
+
+  const activeCards = [
+    { name: 'Aurelia Reserve', last: '4821', exp: '09/28', status: 'Active', type: 'Physical' },
+    { name: 'Aurelia Virtual', last: '7740', exp: '12/27', status: 'Active', type: 'Virtual' },
+  ];
+
+  const activity = [
+    ['Meridian Trust', '-$25,000.00', 'Yesterday'],
+    ['Dividend received', '+$3,120.45', '2 days ago'],
+    ['Insurance premium', '-$1,840.00', '5 days ago'],
+    ['FX exchange USD→EUR', '-$10,000.00', '1 week ago'],
+  ];
+  const accounts = [
+    { name: 'USD Current', type: 'Checking', bal: '$285,420.10', num: '•••• 4821' },
+    { name: 'EUR Savings', type: 'Savings', bal: '€98,210.00', num: '•••• 9033' },
+    { name: 'GBP Reserve', type: 'Savings', bal: '£42,150.55', num: '•••• 1176' },
+  ];
+  const notifs = [
+    ['Transfer completed', 'USD 12,000 to Meridian Trust', '2h ago'],
+    ['Card payment', 'Boutique Mayfair · $420.00', '5h ago'],
+    ['Review ready', 'Your quarterly portfolio review is available', '1d ago'],
+  ];
+
+  const selectSection = (id) => {
+    setSection(id);
+    setAnimKey((k) => k + 1);
+    setMobileOpen(false);
+    setNotifOpen(false);
+    setProfileOpen(false);
+  };
+
+  const Panel = ({ title, children, action, className = '' }) => (
+    <div className={`panel rounded-xl sm:rounded-2xl border border-[#DDD8CC] bg-white/95 backdrop-blur-sm p-4 sm:p-6 md:p-8 shadow-sm ${className}`}>
+      <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+        <h2 className="serif text-xl sm:text-2xl text-[#0F2A43] leading-tight">{title}</h2>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+
+  const field = 'w-full rounded-md border border-[#CFC9BA] bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-[#14202E] focus:border-[#B08A3E] focus:outline-none focus:ring-2 focus:ring-[#D8B76A]/35 transition';
+
+  const maskBalance = (value) => (balanceVisible ? value : '••••••••');
+
+  const content = () => {
+    switch (section) {
+      case 'transfer':
+        return (
+          <Panel title="Realtime bank transfer" className="anim-in">
+            <form className="mx-auto w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">From account</label>
+                <select className={field} defaultValue="usd">
+                  <option value="usd">USD Current · •••• 4821</option>
+                  <option value="eur">EUR Savings · •••• 9033</option>
+                  <option value="gbp">GBP Reserve · •••• 1176</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Beneficiary account / IBAN</label>
+                <input className={field} placeholder="Account number or IBAN" required />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Amount</label>
+                <input type="number" min="0.01" step="0.01" className={field} placeholder="0.00" required />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Reference (optional)</label>
+                <input className={field} placeholder="Payment reference" />
+              </div>
+              <button type="submit" className="btn btn-navy w-full">Send now</button>
+              <p className="text-xs text-[#4A5B6C]">Realtime transfers settle within minutes where corridors support instant rails.</p>
+            </form>
+          </Panel>
+        );
+      case 'wire':
+        return (
+          <Panel title="Wire transfer" className="anim-in">
+            <form className="mx-auto w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">From account</label>
+                <select className={field} defaultValue="usd">
+                  <option value="usd">USD Current · •••• 4821</option>
+                  <option value="eur">EUR Savings · •••• 9033</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Beneficiary name</label>
+                <input className={field} required />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Bank name</label>
+                <input className={field} required />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#14202E]">SWIFT / BIC</label>
+                  <input className={field} required />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#14202E]">IBAN / Account</label>
+                  <input className={field} required />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Amount (USD)</label>
+                <input type="number" min="1" step="0.01" className={field} required />
+              </div>
+              <button type="submit" className="btn btn-navy w-full">Submit wire</button>
+              <p className="text-xs text-[#4A5B6C]">International wires typically complete in 1–3 business days. Fees shown before confirmation.</p>
+            </form>
+          </Panel>
+        );
+      case 'account':
+        return (
+          <Panel title="Account info" className="anim-in">
+            <ul className="divide-y divide-[#E8E4DA]">
+              {accounts.map((a) => (
+                <li key={a.name} className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-4 py-4 sm:py-5">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#0F2A43]">{a.name}</p>
+                    <p className="text-sm text-[#4A5B6C]">{a.type} · {a.num}</p>
+                  </div>
+                  <p className="text-base sm:text-lg font-semibold tabular-nums text-[#0F2A43] shrink-0">{a.bal}</p>
+                </li>
+              ))}
+            </ul>
+            <dl className="mt-6 sm:mt-8 grid gap-3 sm:gap-4 rounded-xl bg-[#F6F4EF] p-4 sm:p-5 grid-cols-1 sm:grid-cols-2">
+              <div><dt className="text-xs text-[#4A5B6C]">Account holder</dt><dd className="font-medium text-[#0F2A43]">Client name on file</dd></div>
+              <div><dt className="text-xs text-[#4A5B6C]">Relationship manager</dt><dd className="font-medium text-[#0F2A43]">Assigned advisor</dd></div>
+              <div><dt className="text-xs text-[#4A5B6C]">Membership</dt><dd className="font-medium text-[#0F2A43]">Reserve</dd></div>
+              <div><dt className="text-xs text-[#4A5B6C]">Opened</dt><dd className="font-medium text-[#0F2A43]">2026</dd></div>
+            </dl>
+          </Panel>
+        );
+      case 'cards':
+        return (
+          <Panel title="Cards" className="anim-in" action={<button type="button" className="btn btn-navy !px-3 !py-2 sm:!px-4 text-sm">Request card</button>}>
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
+              {[
+                { name: 'Aurelia Reserve', last: '4821', exp: '09/28', status: 'Active' },
+                { name: 'Aurelia Virtual', last: '7740', exp: '12/27', status: 'Active' },
+                { name: 'Aurelia Travel', last: '1192', exp: '03/29', status: 'Frozen' },
+              ].map((c) => (
+                <div key={c.last} className="card-lift relative overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 text-white" style={{ background: 'linear-gradient(135deg,#1E4B73,#0A1D30)' }}>
+                  <p className="text-sm text-[#D5DEE8]">{c.name}</p>
+                  <p className="serif mt-6 sm:mt-8 text-xl sm:text-2xl tracking-widest">•••• •••• •••• {c.last}</p>
+                  <div className="mt-5 sm:mt-6 flex justify-between text-sm">
+                    <span>Exp {c.exp}</span>
+                    <span className={c.status === 'Active' ? 'text-[#7FE0A8]' : 'text-[#FF9A8F]'}>{c.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        );
+      case 'tracking':
+        return (
+          <Panel title="Tracking" className="anim-in">
+            <ul className="space-y-3 sm:space-y-4">
+              {[
+                ['Wire to Zurich Private', 'In transit', 'Expected tomorrow'],
+                ['Realtime to Lagos', 'Completed', 'Today 09:14'],
+                ['Card order · virtual', 'Issued', 'Ready in app'],
+              ].map(([t, s, d]) => (
+                <li key={t} className="card-lift flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-3 rounded-xl border border-[#DDD8CC] p-3 sm:p-4 bg-white">
+                  <div className="min-w-0">
+                    <p className="font-medium text-[#0F2A43]">{t}</p>
+                    <p className="text-sm text-[#4A5B6C]">{d}</p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold shrink-0 ${s === 'Completed' || s === 'Issued' ? 'bg-[#E7F6EE] text-[#1B7A4B]' : 'bg-[#FBF7EE] text-[#8A6A26]'}`}>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        );
+      case 'investing':
+        return (
+          <Panel title="Investing" className="anim-in" action={<button type="button" className="btn btn-navy !px-3 !py-2 sm:!px-4 text-sm">View portfolio</button>}>
+            <div className="mb-5 sm:mb-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+              {[['Total value', '$1.24M'], ['YTD return', '+6.2%'], ['Risk profile', 'Balanced']].map(([l, v]) => (
+                <div key={l} className="rounded-xl bg-[#F6F4EF] p-3 sm:p-4">
+                  <p className="text-xs text-[#4A5B6C]">{l}</p>
+                  <p className="serif mt-1 text-lg sm:text-xl text-[#0F2A43]">{v}</p>
+                </div>
+              ))}
+            </div>
+            <ul className="divide-y divide-[#E8E4DA]">
+              {[['Global equity', '42%', '+8.1%'], ['Fixed income', '35%', '+2.4%'], ['Alternatives', '15%', '+4.0%'], ['Cash', '8%', '—']].map(([n, a, r]) => (
+                <li key={n} className="flex items-center justify-between gap-2 sm:gap-4 py-3 sm:py-4">
+                  <span className="font-medium text-[#14202E] min-w-0 truncate">{n}</span>
+                  <span className="tabular-nums text-[#4A5B6C] shrink-0 text-sm sm:text-base">{a}</span>
+                  <span className="w-12 sm:w-16 text-right font-semibold tabular-nums text-[#1B7A4B] shrink-0 text-sm sm:text-base">{r}</span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        );
+      case 'notifications':
+        return (
+          <Panel title="Notifications" className="anim-in">
+            <ul className="divide-y divide-[#E8E4DA]">
+              {notifs.map(([t, d, when]) => (
+                <li key={t} className="py-3 sm:py-4">
+                  <p className="font-medium text-[#0F2A43]">{t}</p>
+                  <p className="text-sm text-[#3D4C5B]">{d}</p>
+                  <p className="mt-1 text-xs text-[#4A5B6C]">{when}</p>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        );
+      case 'loan':
+        return (
+          <Panel title="Loan" className="anim-in">
+            <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+              <div className="rounded-xl border border-[#DDD8CC] p-4 sm:p-5">
+                <p className="text-sm text-[#4A5B6C]">Lombard facility</p>
+                <p className="serif mt-2 text-xl sm:text-2xl text-[#0F2A43]">$500,000</p>
+                <p className="mt-1 text-xs text-[#4A5B6C]">Available · against portfolio</p>
+              </div>
+              <div className="rounded-xl border border-[#DDD8CC] p-4 sm:p-5">
+                <p className="text-sm text-[#4A5B6C]">Outstanding</p>
+                <p className="serif mt-2 text-xl sm:text-2xl text-[#0F2A43]">$0</p>
+                <p className="mt-1 text-xs text-[#4A5B6C]">No active drawdowns</p>
+              </div>
+            </div>
+            <form className="w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Request amount</label>
+                <input type="number" min="1000" className={field} placeholder="Minimum $1,000" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Purpose</label>
+                <select className={field}>
+                  <option>Liquidity</option>
+                  <option>Property</option>
+                  <option>Business</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-navy w-full sm:w-auto">Request facility</button>
+            </form>
+          </Panel>
+        );
+      case 'settings':
+        return (
+          <Panel title="Settings" className="anim-in">
+            <div className="mx-auto w-full max-w-lg space-y-5 sm:space-y-6">
+              {[
+                ['Email alerts', 'Transfers, cards, and security'],
+                ['Two-factor authentication', 'App or SMS codes'],
+                ['Statement language', 'English'],
+                ['Marketing preferences', 'Market notes monthly'],
+              ].map(([t, d]) => (
+                <div key={t} className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 border-b border-[#E8E4DA] pb-4">
+                  <div className="min-w-0">
+                    <p className="font-medium text-[#0F2A43]">{t}</p>
+                    <p className="text-sm text-[#4A5B6C]">{d}</p>
+                  </div>
+                  <button type="button" className="text-sm font-semibold text-[#8A6A26] underline underline-offset-4 shrink-0">Edit</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => go('/signin')} className="btn btn-outline w-full">Sign out</button>
+            </div>
+          </Panel>
+        );
+      case 'support':
+        return (
+          <Panel title="Support" className="anim-in">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
+              <div className="card-lift rounded-xl border border-[#DDD8CC] p-5 sm:p-6">
+                <h3 className="serif text-lg sm:text-xl text-[#0F2A43]">Message your advisor</h3>
+                <p className="mt-2 text-sm text-[#3D4C5B]">Secure chat during business hours in your time zone.</p>
+                <button type="button" className="btn btn-navy mt-4 !px-4 !py-2 text-sm">Open chat</button>
+              </div>
+              <div className="card-lift rounded-xl border border-[#DDD8CC] p-5 sm:p-6">
+                <h3 className="serif text-lg sm:text-xl text-[#0F2A43]">Private client line</h3>
+                <p className="mt-2 text-sm text-[#3D4C5B]">+1 800 555 0142</p>
+                <p className="mt-1 text-xs text-[#4A5B6C]">24-hour for Reserve and Sovereign</p>
+              </div>
+            </div>
+            <form className="mt-6 sm:mt-8 w-full max-w-lg space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Subject</label>
+                <input className={field} required />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#14202E]">Message</label>
+                <textarea className={`${field} min-h-[100px] sm:min-h-[120px]`} required />
+              </div>
+              <button type="submit" className="btn btn-navy w-full sm:w-auto">Send message</button>
+            </form>
+          </Panel>
+        );
+      default:
+        return (
+          <div key={animKey}>
+            {/* Balance card */}
+            <div className="mb-6 sm:mb-8 anim-in">
+              <div className="balance-card relative overflow-hidden rounded-2xl p-5 sm:p-6 text-white bg-gradient-to-br from-[#1E4B73] via-[#163A5C] to-[#0A1D30] shadow-xl text-left">
+                <div className="gloss absolute inset-0 rounded-2xl pointer-events-none" />
+                <div className="relative z-[1]">
+                  <p className="text-[#D5DEE8]" style={{ fontSize: '16px' }}>Good Morning, {firstName}</p>
+                  <p className="serif mt-0.5 text-white" style={{ fontSize: '16px' }}>Welcome back</p>
+                  <p className="serif mt-3 text-lg sm:text-xl text-[#EDD595]">Account overview</p>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="status-dot" aria-hidden="true" />
+                      <span className="text-xs font-semibold text-[#7FE0A8]">Active</span>
+                    </div>
+                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#EDD595] backdrop-blur-sm border border-white/10">
+                      Checking
+                    </span>
+                  </div>
+
+                  <p className="mt-4 text-sm text-[#D5DEE8] text-left">Available balance</p>
+                  <div className="mt-1.5 flex items-center gap-3 text-left">
+                    <p className="serif text-3xl sm:text-4xl tracking-tight tabular-nums">
+                      {maskBalance('$412,860.20')}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setBalanceVisible((v) => !v)}
+                      className="eye-btn flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white"
+                      aria-label={balanceVisible ? 'Hide balance' : 'Show balance'}
+                    >
+                      {balanceVisible ? (
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+
+                  <p className="mt-3 text-sm text-[#B8C4D0] text-left">
+                    Ledger balance{' '}
+                    <span className="font-medium tabular-nums text-[#D5DEE8]">
+                      {maskBalance('$415,200.00')}
+                    </span>
+                  </p>
+
+                  <div className="relative mt-5 flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#A8B8C8]">Checking · •••• 4821 · USD</span>
+                    <button
+                      type="button"
+                      onClick={() => selectSection('transfer')}
+                      className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm border border-white/10 transition hover:bg-white/25"
+                    >
+                      Transfer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            <div className="mb-6 sm:mb-8 anim-in anim-in-d1">
+              <h2 className="serif mb-3 text-lg sm:text-xl text-[#0F2A43]">Quick actions</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                {quickActions.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => selectSection(a.id)}
+                    className="qa-btn flex flex-col items-center gap-2 rounded-xl border border-[#DDD8CC] bg-white/95 p-3 sm:p-4 text-center shadow-sm"
+                  >
+                    <span className="qa-icon flex h-10 w-10 items-center justify-center rounded-full bg-[#F6F4EF] text-[#0F2A43]">
+                      <DashIcon d={a.icon} className="h-5 w-5" />
+                    </span>
+                    <span className="text-xs sm:text-sm font-medium text-[#14202E] leading-tight">{a.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cards + activity */}
+            <div className="grid gap-6 sm:gap-8 grid-cols-1 lg:grid-cols-[1fr_1.1fr] anim-in anim-in-d2">
+              <Panel
+                title="Your cards"
+                action={
+                  <button type="button" onClick={() => selectSection('cards')} className="text-sm font-semibold text-[#8A6A26] underline underline-offset-4">
+                    Manage
+                  </button>
+                }
+              >
+                <div className="space-y-3">
+                  {activeCards.map((c) => (
+                    <div
+                      key={c.last}
+                      className="card-lift flex items-center gap-3 sm:gap-4 rounded-xl border border-[#DDD8CC] bg-[#FBF9F4] p-3 sm:p-4"
+                    >
+                      <div
+                        className="relative flex h-12 w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-lg text-white shadow-md"
+                        style={{ background: 'linear-gradient(135deg,#1E4B73,#0A1D30)' }}
+                      >
+                        <span className="serif text-[10px] tracking-widest opacity-90">•••• {c.last}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-[#0F2A43] text-sm sm:text-base truncate">{c.name}</p>
+                        <p className="text-xs text-[#4A5B6C]">{c.type} · Exp {c.exp}</p>
+                      </div>
+                      <span className="rounded-full bg-[#E7F6EE] px-2.5 py-1 text-[11px] font-semibold text-[#1B7A4B] shrink-0">
+                        {c.status}
+                      </span>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => selectSection('cards')}
+                    className="mt-1 w-full rounded-xl border border-dashed border-[#CFC9BA] py-3 text-sm font-semibold text-[#8A6A26] hover:bg-[#F6F4EF] hover:border-[#C9A24B] transition"
+                  >
+                    + Request new card
+                  </button>
+                </div>
+              </Panel>
+
+              <Panel title="Recent activity">
+                <ul className="divide-y divide-[#E8E4DA]">
+                  {activity.map(([n, a, d]) => (
+                    <li key={n} className="flex items-center justify-between gap-3 sm:gap-4 py-3 sm:py-3.5">
+                      <div className="min-w-0">
+                        <p className="font-medium text-[#14202E] truncate text-sm sm:text-base">{n}</p>
+                        <p className="text-xs text-[#4A5B6C]">{d}</p>
+                      </div>
+                      <span className={`font-semibold tabular-nums shrink-0 text-sm sm:text-base ${a.startsWith('+') ? 'text-[#1B7A4B]' : 'text-[#0F2A43]'}`}>{a}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+            </div>
+
+            {/* Relationship team */}
+            <div className="mt-6 sm:mt-8 navy-bg gloss relative overflow-hidden rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 text-white shadow-lg anim-in anim-in-d3">
+              <div className="relative max-w-xl">
+                <h2 className="serif mb-2 sm:mb-3 text-xl sm:text-2xl">Your relationship team</h2>
+                <p className="mb-5 sm:mb-6 text-sm leading-relaxed text-[#D5DEE8]">A named advisor is assigned to your account. Book a call or send a secure message anytime.</p>
+                <button type="button" onClick={() => selectSection('support')} className="btn btn-gold relative !px-4 !py-2 sm:!px-5 sm:!py-2.5 text-sm">Schedule a call</button>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  const renderMenuItems = (isMobile = false) => (
+    <>
+      {dashMenu.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          onClick={() => selectSection(m.id)}
+          className={`menu-item mb-0.5 flex w-full items-center gap-2.5 sm:gap-3 rounded-lg px-2.5 sm:px-3 py-2.5 text-left text-sm font-medium ${
+            section === m.id ? 'menu-active bg-[#0F2A43] text-white' : 'text-[#14202E]'
+          }`}
+        >
+          <DashIcon d={m.icon} className={`h-5 w-5 shrink-0 ${section === m.id ? 'text-[#EDD595]' : 'text-[#8A6A26]'}`} />
+          <span className="leading-snug">{m.label}</span>
+        </button>
+      ))}
+      <div className={`${isMobile ? 'mt-2 pt-2 border-t border-[#EEEADF]' : 'mt-3 pt-3 border-t border-[#EEEADF]'}`}>
+        <button
+          type="button"
+          onClick={() => go('/signin')}
+          className="menu-item flex w-full items-center gap-2.5 sm:gap-3 rounded-lg px-2.5 sm:px-3 py-2.5 text-left text-sm font-medium text-[#B3261E] hover:bg-[#FDF2F1]"
+        >
+          <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span className="leading-snug">Log out</span>
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="ap w-full max-w-none h-[100dvh] antialiased overflow-hidden flex flex-col">
+      <style>{styles}</style>
+
+      <header className="shrink-0 z-40 w-full border-b border-[#DDD8CC]/80 bg-white/90 backdrop-blur-md">
+        <div className="flex h-14 sm:h-16 w-full items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 lg:px-8">
+          <button
+            type="button"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#0F2A43] hover:bg-[#F6F4EF] lg:hidden transition"
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+            onClick={() => { setMobileOpen(!mobileOpen); setNotifOpen(false); setProfileOpen(false); }}
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d={mobileOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
+            </svg>
+          </button>
+          <button type="button" onClick={() => selectSection('overview')} className="flex min-w-0 items-center gap-2 sm:gap-2.5" aria-label="Dashboard home">
+            <span className="serif gloss flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-b from-[#1E4B73] to-[#0F2A43] text-base sm:text-lg text-[#EDD595] shadow-md">A</span>
+            <span className="serif hidden text-base sm:text-lg text-[#0F2A43] truncate sm:inline">Aurelia Private</span>
+          </button>
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-1 md:gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Notifications"
+                aria-expanded={notifOpen}
+                onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); setMobileOpen(false); }}
+                className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#0F2A43] hover:bg-[#F6F4EF] transition"
+              >
+                <DashIcon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" className="h-[22px] w-[22px]" />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#C0392B] ring-2 ring-white" />
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-[#DDD8CC] bg-white/95 backdrop-blur-md p-2 shadow-xl anim-in">
+                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#4A5B6C]">Notifications</p>
+                  {notifs.map(([t, d, when]) => (
+                    <button key={t} type="button" onClick={() => selectSection('notifications')} className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-[#F6F4EF] transition">
+                      <p className="text-sm font-medium text-[#0F2A43]">{t}</p>
+                      <p className="text-xs text-[#4A5B6C] line-clamp-2">{d}</p>
+                      <p className="mt-0.5 text-[11px] text-[#4A5B6C]">{when}</p>
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => selectSection('notifications')} className="mt-1 w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-[#8A6A26] hover:bg-[#F6F4EF] transition">View all</button>
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Profile menu"
+                aria-expanded={profileOpen}
+                onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); setMobileOpen(false); }}
+                className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-b from-[#1E4B73] to-[#0F2A43] text-xs sm:text-sm font-semibold text-[#EDD595] shadow-md transition hover:opacity-95"
+              >
+                AP
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 z-50 mt-2 w-52 sm:w-56 rounded-xl border border-[#DDD8CC] bg-white/95 backdrop-blur-md py-2 shadow-xl anim-in">
+                  <div className="border-b border-[#EEEADF] px-4 py-3">
+                    <p className="text-sm font-semibold text-[#0F2A43]">Client account</p>
+                    <p className="text-xs text-[#4A5B6C]">Reserve membership</p>
+                  </div>
+                  <button type="button" onClick={() => selectSection('account')} className="block w-full px-4 py-2.5 text-left text-sm text-[#14202E] hover:bg-[#F6F4EF] transition">Account info</button>
+                  <button type="button" onClick={() => selectSection('settings')} className="block w-full px-4 py-2.5 text-left text-sm text-[#14202E] hover:bg-[#F6F4EF] transition">Settings</button>
+                  <button type="button" onClick={() => go('/signin')} className="block w-full border-t border-[#EEEADF] px-4 py-2.5 text-left text-sm font-medium text-[#B3261E] hover:bg-[#F6F4EF] transition">Sign out</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {mobileOpen && (
+          <nav className="max-h-[min(70vh,calc(100dvh-3.5rem))] overflow-y-auto border-t border-[#EEEADF] bg-white px-2 py-2 lg:hidden overscroll-contain" aria-label="Dashboard menu">
+            {renderMenuItems(true)}
+          </nav>
+        )}
+      </header>
+
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+        <aside className="hidden w-56 xl:w-64 2xl:w-72 shrink-0 border-r border-[#DDD8CC]/80 bg-white/90 backdrop-blur-sm lg:flex lg:flex-col overflow-hidden">
+          <nav className="flex-1 overflow-y-auto overscroll-contain space-y-0.5 p-2 sm:p-3" aria-label="Dashboard">
+            {renderMenuItems(false)}
+          </nav>
+        </aside>
+
+        <main className="min-w-0 flex-1 w-full overflow-y-auto overscroll-contain px-3 py-5 sm:px-5 sm:py-6 md:px-6 lg:px-8 xl:px-10">
+          {section !== 'overview' && (
+            <p className="mb-4 sm:mb-6 text-sm font-medium text-[#8A6A26] anim-in">{current.label}</p>
+          )}
+          {content()}
+        </main>
+      </div>
+    </div>
+  );
+}
