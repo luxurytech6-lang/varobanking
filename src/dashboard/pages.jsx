@@ -1,4 +1,5 @@
 import { useState, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 
 /* =========================================================================
    Shared building blocks
@@ -175,8 +176,8 @@ export function Modal({ open, onClose, title, children, size = 'max-w-md' }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4">
+  return createPortal(
+    <div className="ap ap-portal fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-[#0A1D30]/55 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <div role="dialog" aria-modal="true" aria-labelledby={titleId} className={`relative max-h-[92dvh] w-full ${size} overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl sm:p-6 anim-in`}>
         <div className="mb-4 flex items-start justify-between gap-4">
@@ -187,7 +188,8 @@ export function Modal({ open, onClose, title, children, size = 'max-w-md' }) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -568,17 +570,21 @@ function TrackCard({ t, highlight = false }) {
   );
 }
 
-export function TrackingPage() {
+export function TrackingPage({ extra = [], initialRef = '' }) {
+  const ALL = [...extra, ...TRACK];
   const [filter, setFilter] = useState('all');
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState(null);
-  const list = TRACK.filter((t) => filter === 'all' || (filter === 'done' ? isTrackDone(t) : !isTrackDone(t)));
+  const [query, setQuery] = useState(initialRef);
+  const [result, setResult] = useState(() => {
+    const hit = initialRef && ALL.find((t) => normRef(t.ref) === normRef(initialRef));
+    return hit ? { status: 'found', item: hit } : null;
+  });
+  const list = ALL.filter((t) => filter === 'all' || (filter === 'done' ? isTrackDone(t) : !isTrackDone(t)));
 
   const search = (e) => {
     e.preventDefault();
     const q = normRef(query);
     if (!q) { setResult({ status: 'empty' }); return; }
-    const item = TRACK.find((t) => normRef(t.ref) === q);
+    const item = ALL.find((t) => normRef(t.ref) === q);
     setResult(item ? { status: 'found', item } : { status: 'missing', q: query.trim() });
   };
   const tryRef = (t) => { setQuery(t.ref); setResult({ status: 'found', item: t }); };

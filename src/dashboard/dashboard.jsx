@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Panel, RecentActivity, AccountInfoPage, CardsPage, TrackingPage, InvestingPage, NotificationsPage, LoanPage, SettingsPage, SupportPage } from './pages';
+import { Panel, Modal, CopyButton, RecentActivity, AccountInfoPage, CardsPage, TrackingPage, InvestingPage, NotificationsPage, LoanPage, SettingsPage, SupportPage } from './pages';
 import { NOTIFICATIONS } from './data';
 
 const styles = `
@@ -134,6 +134,10 @@ html, body, #root {
   background: rgba(255,255,255,0.22);
   transform: scale(1.06);
 }
+/* Pop-ups render into <body> but keep the dashboard styles */
+.ap.ap-portal { background: transparent; height: auto; }
+.ap.ap-portal::after { display: none; }
+
 /* ---------- Alignment ---------- */
 .ap { text-align: left; }
 
@@ -218,7 +222,178 @@ const TRANSFER_KINDS = {
 const inputCls = 'w-full rounded-md border border-[#CFC9BA] bg-white px-3 py-2 text-sm text-[#14202E] focus:border-[#B08A3E] focus:outline-none focus:ring-2 focus:ring-[#D8B76A]/35 transition';
 const labelCls = 'mb-1 block text-xs font-semibold text-[#3D4C5B]';
 
-function TransferForm({ kind, beneficiaries, onAddBeneficiary, preselectId }) {
+/* ---------- Authorization + receipt modal ---------- */
+const TOKEN_LEN = 6;
+const makeTrackingId = (kind) => {
+  const d = new Date();
+  const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  return `${kind === 'wire' ? 'WR' : 'RT'}-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
+};
+
+function TokenInput({ value, onChange, invalid }) {
+  const refs = useRef([]);
+  const set = (i, ch) => {
+    const next = value.slice(0, i) + ch + value.slice(i + 1);
+    onChange(next.slice(0, TOKEN_LEN));
+  };
+  const onKey = (i) => (e) => {
+    if (e.key === 'Backspace' && !value[i] && i > 0) { refs.current[i - 1]?.focus(); set(i - 1, ' '); }
+    if (e.key === 'ArrowLeft' && i > 0) refs.current[i - 1]?.focus();
+    if (e.key === 'ArrowRight' && i < TOKEN_LEN - 1) refs.current[i + 1]?.focus();
+  };
+  const onInput = (i) => (e) => {
+    const digits = e.target.value.replace(/\D/g, '');
+    if (!digits) { set(i, ' '); return; }
+    if (digits.length > 1) { // paste or autofill
+      const filled = (value.slice(0, i) + digits).slice(0, TOKEN_LEN);
+      onChange(filled.padEnd(i, ' '));
+      refs.current[Math.min(filled.length, TOKEN_LEN - 1)]?.focus();
+      return;
+    }
+    set(i, digits);
+    if (i < TOKEN_LEN - 1) refs.current[i + 1]?.focus();
+  };
+  return (
+    <div className="flex justify-between gap-2" role="group" aria-label="Authorization token">
+      {Array.from({ length: TOKEN_LEN }, (_, i) => (
+        <input
+          key={i}
+          ref={(el) => { refs.current[i] = el; }}
+          value={(value[i] || '').trim()}
+          onChange={onInput(i)}
+          onKeyDown={onKey(i)}
+          onFocus={(e) => e.target.select()}
+          inputMode="numeric"
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          autoFocus={i === 0}
+          maxLength={TOKEN_LEN}
+          aria-label={`Digit ${i + 1} of ${TOKEN_LEN}`}
+          aria-invalid={invalid}
+          className={`h-12 w-full min-w-0 rounded-lg border bg-white text-center text-xl font-semibold tabular-nums text-[#0F2A43] transition focus:outline-none focus:ring-2 sm:h-14 ${invalid ? 'border-[#B3261E] focus:ring-[#B3261E]/25' : 'border-[#CFC9BA] focus:border-[#B08A3E] focus:ring-[#D8B76A]/35'}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function AuthorizeModal({ order, onClose, onComplete, onTrack }) {
+  const [step, setStep] = useState('token'); // token → verifying → done
+  const [token, setToken] = useState('');
+  const [err, setErr] = useState('');
+  const [resendIn, setResendIn] = useState(60);
+  const [receipt, setReceipt] = useState(null);
+  const cfg = TRANSFER_KINDS[order.kind];
+
+  useEffect(() => {
+    if (step !== 'token' || resendIn <= 0) return undefined;
+    const id = setTimeout(() => setResendIn((n) => n - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendIn, step]);
+
+  const verify = (e) => {
+    e.preventDefault();
+    const code = token.replace(/\s/g, '');
+    if (code.length < TOKEN_LEN) { setErr(`Enter all ${TOKEN_LEN} digits of your authorization token.`); return; }
+    setErr('');
+    setStep('verifying');
+    // TODO: verify the token with your API before releasing the payment.
+    setTimeout(() => {
+      const r = {
+        trackingId: makeTrackingId(order.kind),
+        when: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        ...order,
+      };
+      setReceipt(r);
+      setStep('done');
+      onComplete(r);
+    }, 900);
+  };
+
+  const close = step === 'verifying' ? () => {} : onClose;
+
+  return (
+    <Modal open onClose={close} title={step === 'done' ? '' : 'Authorize payment'}>
+      {step !== 'done' ? (
+        <form onSubmit={verify} noValidate>
+          <div className="flex items-start gap-3 rounded-lg bg-[#F6F4EF] p-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0F2A43] text-[#EDD595]">
+              <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </span>
+            <div className="min-w-0 text-sm">
+              <p className="font-semibold text-[#0F2A43]">{usd(order.total)} to {order.ben.name}</p>
+              <p className="text-xs text-[#4A5B6C]">{cfg.title} · {order.ben.bank} •••• {lastFour(order.ben.account)}</p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm text-[#3D4C5B]">Enter the {TOKEN_LEN}-digit authorization token from your Aurelia app or security device.</p>
+          <div className="mt-3">
+            <TokenInput value={token} onChange={(v) => { setToken(v); setErr(''); }} invalid={!!err} />
+          </div>
+          {err && <p role="alert" className="mt-2 text-sm text-[#B3261E]">{err}</p>}
+          <div className="mt-3 flex items-center justify-between text-xs text-[#4A5B6C]">
+            <span>Token expires in 5 minutes.</span>
+            {resendIn > 0 ? (
+              <span className="tabular-nums">Resend in 0:{String(resendIn).padStart(2, '0')}</span>
+            ) : (
+              <button type="button" onClick={() => { setResendIn(60); setToken(''); }} className="font-semibold text-[#8A6A26] underline underline-offset-4">Send a new token</button>
+            )}
+          </div>
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} disabled={step === 'verifying'} className="btn btn-outline !px-5 !py-2.5 text-sm disabled:opacity-50">Cancel</button>
+            <button type="submit" disabled={step === 'verifying'} className="btn btn-gold !px-5 !py-2.5 text-sm disabled:opacity-80">
+              {step === 'verifying' ? 'Verifying…' : `Authorize ${usd(order.total)}`}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div role="status">
+          <div className="-mt-6 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#E7F6EE] text-[#1B7A4B]">
+              <svg className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </span>
+            <p className="serif mt-3 text-2xl text-[#0F2A43]">{order.kind === 'wire' ? 'Wire sent' : 'Transfer successful'}</p>
+            <p className="mt-1 text-sm text-[#4A5B6C]">{usd(receipt.amount)} is on its way to {receipt.ben.name}.</p>
+          </div>
+
+          <div className="mt-5 rounded-xl bg-gradient-to-br from-[#1E4B73] to-[#0A1D30] p-4 text-white">
+            <p className="text-xs text-[#A8B8C8]">Tracking ID</p>
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <p className="serif text-xl tracking-wide">{receipt.trackingId}</p>
+              <CopyButton value={receipt.trackingId} label="Copy tracking ID" dark />
+            </div>
+          </div>
+
+          <dl className="mt-4 divide-y divide-[#EEEAE0] text-sm">
+            {[
+              ['Beneficiary', receipt.ben.name],
+              ['Bank', receipt.ben.bank],
+              ['Account', `•••• ${lastFour(receipt.ben.account)}`],
+              ...(receipt.ben.swift ? [['SWIFT / BIC', receipt.ben.swift]] : []),
+              ['From', `${MAIN_ACCOUNT.name} ${MAIN_ACCOUNT.num}`],
+              ['Amount', usd(receipt.amount)],
+              ['Fee', cfg.fee ? usd(cfg.fee) : 'Free'],
+              ['Total debited', usd(receipt.total)],
+              ...(receipt.reference ? [['Reference', receipt.reference]] : []),
+              ['Date', receipt.when],
+              ['Expected arrival', cfg.eta],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 py-2">
+                <dt className="text-[#4A5B6C]">{k}</dt>
+                <dd className={`truncate text-right font-medium text-[#0F2A43] ${k === 'Total debited' ? 'font-semibold' : ''}`}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <button type="button" onClick={() => onTrack(receipt.trackingId)} className="btn btn-outline !py-2.5 text-sm">Track this transfer</button>
+            <button type="button" onClick={onClose} className="btn btn-navy !py-2.5 text-sm">Done</button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function TransferForm({ kind, beneficiaries, onAddBeneficiary, preselectId, onTransferComplete, onTrack }) {
   const cfg = TRANSFER_KINDS[kind];
   const list = beneficiaries.filter((b) => b.kind === kind);
   const [benId, setBenId] = useState(() => (list.some((b) => b.id === preselectId) ? preselectId : ''));
@@ -227,7 +402,7 @@ function TransferForm({ kind, beneficiaries, onAddBeneficiary, preselectId }) {
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
   const [err, setErr] = useState('');
-  const [sent, setSent] = useState(null);
+  const [pending, setPending] = useState(null);
 
   const ben = list.find((b) => b.id === benId);
   const amt = parseFloat(amount) || 0;
@@ -258,24 +433,10 @@ function TransferForm({ kind, beneficiaries, onAddBeneficiary, preselectId }) {
     if (amt <= 0) { setErr('Enter an amount greater than zero.'); return; }
     if (total > MAIN_ACCOUNT.available) { setErr(`This exceeds your available balance of ${usd(MAIN_ACCOUNT.available)}.`); return; }
     setErr('');
-    setSent({ name: ben.name, amount: amt, total });
+    setPending({ kind, ben, amount: amt, total, reference: reference.trim() });
   };
 
-  const reset = () => { setSent(null); setAmount(''); setReference(''); };
-
-  if (sent) {
-    return (
-      <Panel title={cfg.title} className="anim-in">
-        <div className="mx-auto max-w-md py-6 text-center" role="status">
-          <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E7F6EE] text-2xl text-[#1B7A4B]" aria-hidden="true">✓</span>
-          <p className="serif text-2xl text-[#0F2A43]">{kind === 'wire' ? 'Wire sent' : 'Transfer sent'}</p>
-          <p className="mt-2 text-sm text-[#3D4C5B]">{usd(sent.amount)} to {sent.name}. Expected: {cfg.eta.toLowerCase()}.</p>
-          <p className="mt-1 text-xs text-[#4A5B6C]">Total debited {usd(sent.total)} from {MAIN_ACCOUNT.name} {MAIN_ACCOUNT.num}</p>
-          <button type="button" onClick={reset} className="btn btn-navy mt-6 !px-5 !py-2.5 text-sm">Make another transfer</button>
-        </div>
-      </Panel>
-    );
-  }
+  const finish = () => { setPending(null); setAmount(''); setReference(''); };
 
   return (
     <Panel title={cfg.title} subtitle={cfg.subtitle} className="anim-in">
@@ -393,6 +554,14 @@ function TransferForm({ kind, beneficiaries, onAddBeneficiary, preselectId }) {
           </div>
         </aside>
       </form>
+      {pending && (
+        <AuthorizeModal
+          order={pending}
+          onClose={finish}
+          onComplete={onTransferComplete}
+          onTrack={(id) => { finish(); onTrack(id); }}
+        />
+      )}
     </Panel>
   );
 }
@@ -408,6 +577,25 @@ export default function Dashboard({ go: goProp } = {}) {
   const mainRef = useRef(null);
   const [beneficiaries, setBeneficiaries] = useState(SEED_BENEFICIARIES);
   const [notifItems, setNotifItems] = useState(NOTIFICATIONS);
+  const [tracked, setTracked] = useState([]);
+  const [trackRef, setTrackRef] = useState('');
+  const onTransferComplete = (r) => {
+    const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const wire = r.kind === 'wire';
+    setTracked((list) => [{
+      id: r.trackingId,
+      title: `${wire ? 'Wire' : 'Realtime'} to ${r.ben.name}`,
+      ref: r.trackingId,
+      amount: r.total,
+      method: wire ? 'Wire' : 'Realtime',
+      steps: ['Initiated', 'Processing', 'Sent', 'Delivered'],
+      at: 1,
+      eta: wire ? 'Expected in 1–3 business days' : 'Expected within minutes',
+      times: [`Today, ${time}`, '', '', ''],
+    }, ...list]);
+    setNotifItems((list) => [{ id: `n-${r.trackingId}`, type: 'transaction', title: wire ? 'Wire sent' : 'Transfer sent', body: `${usd(r.amount)} to ${r.ben.name} · ${r.trackingId}`, time, day: 'Today', read: false }, ...list]);
+  };
+  const openTracking = (ref) => { selectSection('tracking'); setTrackRef(ref); };
   const unreadCount = notifItems.filter((n) => !n.read).length;
   const [preselect, setPreselect] = useState(null);
   const addBeneficiary = (b) => setBeneficiaries((list) => [...list, b]);
@@ -454,6 +642,7 @@ export default function Dashboard({ go: goProp } = {}) {
 
   const selectSection = (id) => {
     setPreselect(null);
+    setTrackRef('');
     if (mainRef.current) mainRef.current.scrollTop = 0;
     setSection(id);
     setAnimKey((k) => k + 1);
@@ -476,6 +665,8 @@ export default function Dashboard({ go: goProp } = {}) {
             beneficiaries={beneficiaries}
             onAddBeneficiary={addBeneficiary}
             preselectId={preselect}
+            onTransferComplete={onTransferComplete}
+            onTrack={openTracking}
           />
         );
       case 'account':
@@ -483,7 +674,7 @@ export default function Dashboard({ go: goProp } = {}) {
       case 'cards':
         return <CardsPage />;
       case 'tracking':
-        return <TrackingPage />;
+        return <TrackingPage key={trackRef || 'tracking'} extra={tracked} initialRef={trackRef} />;
       case 'investing':
         return <InvestingPage />;
       case 'notifications':
